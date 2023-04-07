@@ -1,0 +1,12 @@
+# Node modules
+node_modules
+
+# Visual Studio Code
+.vscode
+
+# Distribution / packaging
+dist
+
+# Environment variables
+.env*
+!.env.example

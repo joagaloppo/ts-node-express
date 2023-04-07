@@ -1,0 +1,19 @@
+{
+  "name": "ts-node-express",
+  "description": "A simple boilerplate for building RESTful APIs using TypeScript, Node.js, Express, and Prisma",
+  "author": "Joaquin Galoppo",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "ISC",
+  "keywords": [],
+  "scripts": {
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  }
+}
