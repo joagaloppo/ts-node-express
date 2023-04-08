@@ -1,0 +1,15 @@
+{
+	"parser": "@typescript-eslint/parser",
+	"plugins": ["import", "prettier", "@typescript-eslint"],
+	"extends": ["airbnb-base", "prettier", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended"],
+	"env": {
+		"node": true,
+		"es2021": true
+	},
+	"rules": {
+		"import/no-extraneous-dependencies": ["error", { "devDependencies": true }], // don't trigger an error when importing devDependencies on tests
+		"import/no-unresolved": "off", // don't trigger an error when importing from a path
+		"import/extensions": "off", // don't trigger an error when importing from a path
+		"prettier/prettier": ["error"] // trigger an error when prettier is not satisfied
+	}
+}
