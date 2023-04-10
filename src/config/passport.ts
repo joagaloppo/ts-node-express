@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { userService } from '../services';
+import { authService, userService } from '../services';
 
 if (
   !process.env.JWT_SECRET ||
@@ -35,23 +35,6 @@ passport.use(
   })
 );
 
-passport.use(
-  new GoogleStrategy(googleOptions, async (accessToken: any, refreshToken: any, profile: any, done: any) => {
-    try {
-      let user = await userService.getUserByGoogleId(profile.id);
-      if (!user) {
-        user = await userService.createUser({
-          googleId: profile.id,
-          email: profile.emails[0].value,
-          name: profile.displayName,
-        });
-      }
-
-      return done(null, user);
-    } catch (err) {
-      return done(err, null);
-    }
-  })
-);
+passport.use(new GoogleStrategy(googleOptions, authService.loginWithGoogle));
 
 export default passport;

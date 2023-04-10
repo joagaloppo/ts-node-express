@@ -14,19 +14,7 @@ router.get('/secret', passport.authenticate('jwt', { session: false }), (req, re
   res.json(req.user);
 });
 
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-router.get('/google/callback', (req, res, next) => {
-  passport.authenticate('google', { session: false }, (err, user) => {
-    if (err) {
-      return res.status(500).json({ message: 'Server error' });
-    }
-    if (!user) {
-      return res.status(401).json({ message: 'Authentication failed' });
-    }
-    const token = jwt.sign({ sub: user.id }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
-    return res.json({ user, token });
-  })(req, res, next);
-});
+router.get('/google', authController.googleAuth);
+router.get('/google/callback', authController.googleAuthCallback);
 
 export default router;
