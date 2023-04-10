@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express, { Application } from 'express';
+import passport from './config/passport';
 import router from './routes/index';
 
 const app: Application = express();
@@ -7,9 +8,8 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.use('/', router);
-app.use((req, res) => res.status(404).json({ message: `Cannot ${req.method} ${req.path}` }));
+app.use(passport.initialize());
+app.use(router);
 
 export const server = app.listen(port, () => {
   console.log(`[server] listening at http://localhost:${port}`);
