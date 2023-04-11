@@ -51,6 +51,23 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   return res.status(204).send();
 });
 
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const user = await userService.getUserByEmail(email);
+  if (!user) throw new Error('User not found');
+  const resetPasswordToken = await tokenService.generateResetPasswordToken(user);
+  await emailService.sendResetPasswordEmail(email, resetPasswordToken);
+  return res.status(204).send();
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+  const { token, password } = req.body;
+  // TO-DO: delete all refresh tokens of the user
+  if (!token || typeof token !== 'string') throw new Error('Invalid token');
+  await authService.resetPassword(token, password);
+  return res.status(204).send();
+});
+
 const authController = {
   register,
   login,
@@ -60,6 +77,8 @@ const authController = {
   logout,
   sendVerificationEmail,
   verifyEmail,
+  forgotPassword,
+  resetPassword,
 };
 
 export default authController;
