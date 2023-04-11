@@ -35,4 +35,5 @@ enum TokenTypes {
   ACCESS
   REFRESH
   VERIFY_EMAIL
+  RESET_PASSWORD
 }
