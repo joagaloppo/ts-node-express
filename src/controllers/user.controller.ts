@@ -7,8 +7,14 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
   res.json({ users });
 });
 
+const deleteAllUsers = catchAsync(async (req: Request, res: Response) => {
+  await userService.deleteAllUsers();
+  res.json({ message: 'All users dropped' });
+});
+
 const userController = {
   getUsers,
+  deleteAllUsers,
 };
 
 export default userController;
