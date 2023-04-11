@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import moment, { Moment } from 'moment';
-import { PrismaClient, TokenTypes } from '@prisma/client';
+import { PrismaClient, TokenTypes, User } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const { JWT_SECRET } = process.env;
@@ -60,11 +60,19 @@ const generateAuthTokens = async (userId: string) => {
   };
 };
 
+const generateVerifyEmailToken = async (user: User) => {
+  const verifyEmailTokenExpires = moment().add(10, 'minutes');
+  const verifyEmailToken = generateToken(user.id, verifyEmailTokenExpires, TokenTypes.VERIFY_EMAIL);
+  await saveToken(verifyEmailToken, user.id, verifyEmailTokenExpires, TokenTypes.VERIFY_EMAIL);
+  return verifyEmailToken;
+};
+
 const tokenService = {
   generateToken,
   saveToken,
   verifyToken,
   generateAuthTokens,
+  generateVerifyEmailToken,
 };
 
 export default tokenService;
