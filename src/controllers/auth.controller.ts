@@ -27,8 +27,14 @@ const googleAuthCallback = catchAsync(async (req: Request, res: Response, next: 
   })(req, res, next);
 });
 
+const refreshTokens = catchAsync(async (req: Request, res: Response) => {
+  const tokens = await authService.refreshAuth(req.body.refreshToken);
+  return res.status(200).json({ ...tokens });
+});
+
 const logout = catchAsync(async (req: Request, res: Response) => {
-  return res.status(200).json({ message: 'Logging out...' });
+  await authService.logout(req.body.refreshToken);
+  return res.status(204).send();
 });
 
 const authController = {
@@ -36,6 +42,7 @@ const authController = {
   login,
   googleAuth,
   googleAuthCallback,
+  refreshTokens,
   logout,
 };
 
