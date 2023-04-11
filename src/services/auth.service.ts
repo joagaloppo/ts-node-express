@@ -17,6 +17,7 @@ const loginWithGoogle = async (accessToken: string, refreshToken: string, profil
       googleId: profile.id,
       email: profile.emails[0].value,
       name: profile.displayName,
+      emailVerified: true,
     });
     return done(null, newUser);
   } catch (error) {
@@ -40,11 +41,36 @@ const logout = async (refreshToken: string) => {
   await prisma.token.delete({ where: { id: refreshTokenDoc.id } });
 };
 
+const verifyEmail = async (token: string) => {
+  const tokenDoc = await tokenService.verifyToken(token, TokenTypes.VERIFY_EMAIL);
+  if (!tokenDoc.User) throw new Error('User not found');
+  const user = await userService.getUserById(tokenDoc.User.id);
+  if (!user) throw new Error('User not found');
+  await prisma.token.delete({ where: { id: tokenDoc.id } });
+  await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } });
+};
+
+const resetPassword = async (token: string, password: string) => {
+  const tokenDoc = await tokenService.verifyToken(token, TokenTypes.RESET_PASSWORD);
+  if (!tokenDoc.User) throw new Error('User not found');
+  const user = await userService.getUserById(tokenDoc.User.id);
+  if (!user) throw new Error('User not found');
+
+  const refreshTokens = await prisma.token.findMany({ where: { type: TokenTypes.REFRESH } });
+  await prisma.token.deleteMany({ where: { id: { in: refreshTokens.map((t) => t.id) } } });
+
+  await prisma.token.delete({ where: { id: tokenDoc.id } });
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  await prisma.user.update({ where: { id: user.id }, data: { password: hashedPassword } });
+};
+
 const authService = {
   loginWithCredentials,
   loginWithGoogle,
   refreshAuth,
   logout,
+  verifyEmail,
+  resetPassword,
 };
 
 export default authService;
