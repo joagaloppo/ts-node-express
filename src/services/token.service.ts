@@ -67,12 +67,20 @@ const generateVerifyEmailToken = async (user: User) => {
   return verifyEmailToken;
 };
 
+const generateResetPasswordToken = async (user: User) => {
+  const resetPasswordTokenExpires = moment().add(10, 'minutes');
+  const resetPasswordToken = generateToken(user.id, resetPasswordTokenExpires, TokenTypes.RESET_PASSWORD);
+  await saveToken(resetPasswordToken, user.id, resetPasswordTokenExpires, TokenTypes.RESET_PASSWORD);
+  return resetPasswordToken;
+};
+
 const tokenService = {
   generateToken,
   saveToken,
   verifyToken,
   generateAuthTokens,
   generateVerifyEmailToken,
+  generateResetPasswordToken,
 };
 
 export default tokenService;
