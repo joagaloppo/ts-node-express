@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs';
-import { userService } from './index';
+import { PrismaClient, TokenTypes } from '@prisma/client';
+import { userService, tokenService } from './index';
 
+const prisma = new PrismaClient();
 const loginWithCredentials = async (email: string, password: string) => {
   const user = await userService.getUserByEmail(email);
   if (user && user.password && bcrypt.compareSync(password, user.password)) return user;
@@ -10,10 +12,7 @@ const loginWithCredentials = async (email: string, password: string) => {
 const loginWithGoogle = async (accessToken: string, refreshToken: string, profile: any, done: any) => {
   try {
     const user = await userService.getUserByGoogleId(profile.id);
-
-    if (user) {
-      return done(null, user);
-    }
+    if (user) return done(null, user);
     const newUser = await userService.createUser({
       googleId: profile.id,
       email: profile.emails[0].value,
@@ -25,9 +24,27 @@ const loginWithGoogle = async (accessToken: string, refreshToken: string, profil
   }
 };
 
+const refreshAuth = async (refreshToken: string) => {
+  const tokenDoc = await tokenService.verifyToken(refreshToken, TokenTypes.REFRESH);
+  if (!tokenDoc.User) throw new Error('User not found');
+  const user = await userService.getUserById(tokenDoc.User.id);
+  if (!user) throw new Error('User not found');
+  await prisma.token.delete({ where: { id: tokenDoc.id } });
+  const tokens = await tokenService.generateAuthTokens(user.id);
+  return tokens;
+};
+
+const logout = async (refreshToken: string) => {
+  const refreshTokenDoc = await prisma.token.findUnique({ where: { token: refreshToken } });
+  if (!refreshTokenDoc) throw new Error('Not found');
+  await prisma.token.delete({ where: { id: refreshTokenDoc.id } });
+};
+
 const authService = {
   loginWithCredentials,
   loginWithGoogle,
+  refreshAuth,
+  logout,
 };
 
 export default authService;
