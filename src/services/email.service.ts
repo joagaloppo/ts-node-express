@@ -32,10 +32,19 @@ const sendVerificationEmail = async (to: string, token: string) => {
   await sendEmail(to, subject, text);
 };
 
+const sendResetPasswordEmail = async (to: string, token: string) => {
+  const subject = 'Reset Password';
+  // replace this url with the link to the reset password page of your front-end app
+  const resetPasswordUrl = `http://localhost:4000/reset-password?token=${token}`;
+  const text = `Please reset your password by clicking on the following link: ${resetPasswordUrl}`;
+  await sendEmail(to, subject, text);
+};
+
 const emailService = {
   transport,
   sendEmail,
   sendVerificationEmail,
+  sendResetPasswordEmail,
 };
 
 export default emailService;
