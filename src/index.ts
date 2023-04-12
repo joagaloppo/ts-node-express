@@ -1,12 +1,11 @@
 import 'dotenv/config';
 import app from './app';
+import config from './config/config';
 import logger from './config/logger';
 
-const port = process.env.PORT || 3000;
-
-const server = app.listen(port, () => {
-  logger.info(`listening at http://localhost:${port}`);
-  logger.info(`environment: ${process.env.NODE_ENV}`);
+const server = app.listen(config.port, () => {
+  logger.info(`listening at http://localhost:${config.port}`);
+  logger.info(`environment: ${config.env}`);
 });
 
 process.on('SIGTERM', () => {

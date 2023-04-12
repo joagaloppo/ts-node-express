@@ -1,19 +1,8 @@
 import nodemailer from 'nodemailer';
 import logger from '../config/logger';
+import config from '../config/config';
 
-const { SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, EMAIL_FROM } = process.env;
-if (!SMTP_HOST || !SMTP_PORT || !SMTP_USERNAME || !SMTP_PASSWORD || !EMAIL_FROM) {
-  throw new Error('Missing email configuration. Make sure you have configured the SMTP options in .env');
-}
-
-const transport = nodemailer.createTransport({
-  host: SMTP_HOST,
-  port: Number(SMTP_PORT),
-  auth: {
-    user: SMTP_USERNAME,
-    pass: SMTP_PASSWORD,
-  },
-});
+const transport = nodemailer.createTransport(config.email.smtp);
 
 transport
   .verify()
@@ -21,7 +10,7 @@ transport
   .catch(() => logger.error('there was an error connecting to the email server'));
 
 const sendEmail = async (to: string, subject: string, text: string) => {
-  const msg = { from: EMAIL_FROM, to, subject, text };
+  const msg = { from: config.email.from, to, subject, text };
   await transport.sendMail(msg);
 };
 

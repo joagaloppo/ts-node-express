@@ -2,12 +2,11 @@ import jwt from 'jsonwebtoken';
 import moment, { Moment } from 'moment';
 import { PrismaClient, TokenTypes, User } from '@prisma/client';
 import ApiError from '../utils/ApiError';
+import config from '../config/config';
 
 const prisma = new PrismaClient();
-const { JWT_SECRET } = process.env;
-if (!JWT_SECRET) throw new Error('JWT secret is not defined');
 
-const generateToken = (userId: string, expires: Moment, type: TokenTypes, secret = JWT_SECRET) => {
+const generateToken = (userId: string, expires: Moment, type: TokenTypes, secret = config.jwt.secret) => {
   const payload = {
     sub: userId,
     iat: moment().unix(),
@@ -31,7 +30,7 @@ const saveToken = async (token: string, userId: string, expires: Moment, type: T
 };
 
 const verifyToken = async (token: string, type: TokenTypes) => {
-  const payload = jwt.verify(token, JWT_SECRET);
+  const payload = jwt.verify(token, config.jwt.secret);
   const tokenDoc = await prisma.token.findUnique({ where: { token }, include: { User: true } });
   if (!tokenDoc) throw new ApiError(404, 'Token not found');
   if (tokenDoc.type !== type) throw new ApiError(400, 'Token is invalid');
@@ -42,10 +41,10 @@ const verifyToken = async (token: string, type: TokenTypes) => {
 };
 
 const generateAuthTokens = async (userId: string) => {
-  const accessTokenExpires = moment().add(30, 'minutes');
+  const accessTokenExpires = moment().add(config.jwt.accessExpiratonMinutes, 'minutes');
   const accessToken = generateToken(userId, accessTokenExpires, TokenTypes.ACCESS);
 
-  const refreshTokenExpires = moment().add(30, 'days');
+  const refreshTokenExpires = moment().add(config.jwt.refreshExpiratonDays, 'days');
   const refreshToken = generateToken(userId, refreshTokenExpires, TokenTypes.REFRESH);
   await saveToken(refreshToken, userId, refreshTokenExpires, TokenTypes.REFRESH);
 
@@ -62,14 +61,14 @@ const generateAuthTokens = async (userId: string) => {
 };
 
 const generateVerifyEmailToken = async (user: User) => {
-  const verifyEmailTokenExpires = moment().add(10, 'minutes');
+  const verifyEmailTokenExpires = moment().add(config.jwt.verifyEmailExpiratonMinutes, 'minutes');
   const verifyEmailToken = generateToken(user.id, verifyEmailTokenExpires, TokenTypes.VERIFY_EMAIL);
   await saveToken(verifyEmailToken, user.id, verifyEmailTokenExpires, TokenTypes.VERIFY_EMAIL);
   return verifyEmailToken;
 };
 
 const generateResetPasswordToken = async (user: User) => {
-  const resetPasswordTokenExpires = moment().add(10, 'minutes');
+  const resetPasswordTokenExpires = moment().add(config.jwt.resetPasswordExpiratonMinutes, 'minutes');
   const resetPasswordToken = generateToken(user.id, resetPasswordTokenExpires, TokenTypes.RESET_PASSWORD);
   await saveToken(resetPasswordToken, user.id, resetPasswordTokenExpires, TokenTypes.RESET_PASSWORD);
   return resetPasswordToken;

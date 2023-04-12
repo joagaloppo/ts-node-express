@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import ApiError from '../utils/ApiError';
 import logger from '../config/logger';
+import config from '../config/config';
 
 type CustomError = {
   statusCode?: number;
@@ -23,7 +24,7 @@ const errorConverter = (err: CustomError, req: Request, res: Response, next: Nex
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const errorHandler = (err: CustomError, req: Request, res: Response, next: NextFunction) => {
   let { statusCode, message } = err;
-  if (process.env.NODE_ENV === 'production' && !err.isOperational) {
+  if (config.env === 'production' && !err.isOperational) {
     statusCode = 500;
     message = 'Internal Server Error';
   }
@@ -33,13 +34,13 @@ const errorHandler = (err: CustomError, req: Request, res: Response, next: NextF
   const response = {
     code: statusCode,
     message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    ...(config.env === 'development' && { stack: err.stack }),
   };
 
-  if (process.env.NODE_ENV === 'development') logger.error(err);
+  if (config.env === 'development') logger.error(err);
 
   if (!statusCode) statusCode = 500;
-  res.status(statusCode).send(response);
+  return res.status(statusCode).send(response);
 };
 
 export { errorConverter, errorHandler };
