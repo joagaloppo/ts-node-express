@@ -26,6 +26,7 @@
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
     "helmet": "^6.1.5",
     "http-status": "^1.6.2",
     "jsonwebtoken": "^9.0.0",
