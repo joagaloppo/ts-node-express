@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import logger from '../config/logger';
 
 const { SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, EMAIL_FROM } = process.env;
 if (!SMTP_HOST || !SMTP_PORT || !SMTP_USERNAME || !SMTP_PASSWORD || !EMAIL_FROM) {
@@ -16,8 +17,8 @@ const transport = nodemailer.createTransport({
 
 transport
   .verify()
-  .then(() => console.log('[server] Email server is ready to take our messages'))
-  .catch(() => console.log('[server] Email server is not ready to take our messages. Check the configuration'));
+  .then(() => logger.info('email server is ready to take our messages'))
+  .catch(() => logger.error('there was an error connecting to the email server'));
 
 const sendEmail = async (to: string, subject: string, text: string) => {
   const msg = { from: EMAIL_FROM, to, subject, text };
