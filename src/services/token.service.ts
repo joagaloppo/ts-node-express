@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import moment, { Moment } from 'moment';
 import { PrismaClient, TokenTypes, User } from '@prisma/client';
+import ApiError from '../utils/ApiError';
 
 const prisma = new PrismaClient();
 const { JWT_SECRET } = process.env;
@@ -32,11 +33,11 @@ const saveToken = async (token: string, userId: string, expires: Moment, type: T
 const verifyToken = async (token: string, type: TokenTypes) => {
   const payload = jwt.verify(token, JWT_SECRET);
   const tokenDoc = await prisma.token.findUnique({ where: { token }, include: { User: true } });
-  if (!tokenDoc) throw new Error('Token not found');
-  if (tokenDoc.type !== type) throw new Error('Token is invalid');
-  if (tokenDoc.blacklisted) throw new Error('Token is blacklisted');
-  if (moment().isAfter(moment(tokenDoc.expiresAt))) throw new Error('Token has expired');
-  if (tokenDoc.User && tokenDoc.User.id !== payload.sub) throw new Error('Token is invalid');
+  if (!tokenDoc) throw new ApiError(404, 'Token not found');
+  if (tokenDoc.type !== type) throw new ApiError(400, 'Token is invalid');
+  if (tokenDoc.blacklisted) throw new ApiError(400, 'Token is blacklisted');
+  if (moment().isAfter(moment(tokenDoc.expiresAt))) throw new ApiError(400, 'Token has expired');
+  if (tokenDoc.User && tokenDoc.User.id !== payload.sub) throw new ApiError(400, 'Token is invalid');
   return tokenDoc;
 };
 

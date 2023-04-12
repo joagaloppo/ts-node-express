@@ -3,6 +3,7 @@ import passport from 'passport';
 import { User } from '@prisma/client';
 import catchAsync from '../utils/catchAsync';
 import { authService, userService, tokenService, emailService } from '../services';
+import ApiError from '../utils/ApiError';
 
 const register = catchAsync(async (req: Request, res: Response) => {
   const user = await userService.createUser(req.body);
@@ -46,7 +47,7 @@ const sendVerificationEmail = catchAsync(async (req: Request, res: Response) => 
 
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   const { token } = req.query;
-  if (!token || typeof token !== 'string') throw new Error('Invalid token');
+  if (!token || typeof token !== 'string') throw new ApiError(400, 'Invalid token');
   await authService.verifyEmail(token);
   return res.status(204).send();
 });
@@ -54,7 +55,7 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
   const { email } = req.body;
   const user = await userService.getUserByEmail(email);
-  if (!user) throw new Error('User not found');
+  if (!user) throw new ApiError(404, 'User not found');
   const resetPasswordToken = await tokenService.generateResetPasswordToken(user);
   await emailService.sendResetPasswordEmail(email, resetPasswordToken);
   return res.status(204).send();
@@ -63,7 +64,7 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const { token, password } = req.body;
   // TO-DO: delete all refresh tokens of the user
-  if (!token || typeof token !== 'string') throw new Error('Invalid token');
+  if (!token || typeof token !== 'string') throw new ApiError(400, 'Invalid token');
   await authService.resetPassword(token, password);
   return res.status(204).send();
 });
