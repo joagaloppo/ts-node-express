@@ -2,24 +2,20 @@ import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { authService, userService } from '../services';
+import config from './config';
 
-if (
-  !process.env.JWT_SECRET ||
-  !process.env.GOOGLE_CLIENT_ID ||
-  !process.env.GOOGLE_CLIENT_SECRET ||
-  !process.env.GOOGLE_CALLBACK_URL
-) {
+if (!config.google.clientId || !config.google.clientSecret) {
   throw new Error('Environment variables not set');
 }
 
 const jwtOptions = {
-  secretOrKey: process.env.JWT_SECRET,
+  secretOrKey: config.jwt.secret,
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 };
 
 const googleOptions = {
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  clientID: config.google.clientId,
+  clientSecret: config.google.clientSecret,
   callbackURL: '/auth/google/callback',
 };
 

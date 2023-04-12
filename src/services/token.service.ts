@@ -2,12 +2,11 @@ import jwt from 'jsonwebtoken';
 import moment, { Moment } from 'moment';
 import { PrismaClient, TokenTypes, User } from '@prisma/client';
 import ApiError from '../utils/ApiError';
+import config from '../config/config';
 
 const prisma = new PrismaClient();
-const { JWT_SECRET } = process.env;
-if (!JWT_SECRET) throw new Error('JWT secret is not defined');
 
-const generateToken = (userId: string, expires: Moment, type: TokenTypes, secret = JWT_SECRET) => {
+const generateToken = (userId: string, expires: Moment, type: TokenTypes, secret = config.jwt.secret) => {
   const payload = {
     sub: userId,
     iat: moment().unix(),
@@ -31,7 +30,7 @@ const saveToken = async (token: string, userId: string, expires: Moment, type: T
 };
 
 const verifyToken = async (token: string, type: TokenTypes) => {
-  const payload = jwt.verify(token, JWT_SECRET);
+  const payload = jwt.verify(token, config.jwt.secret);
   const tokenDoc = await prisma.token.findUnique({ where: { token }, include: { User: true } });
   if (!tokenDoc) throw new ApiError(404, 'Token not found');
   if (tokenDoc.type !== type) throw new ApiError(400, 'Token is invalid');

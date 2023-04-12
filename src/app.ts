@@ -4,10 +4,11 @@ import router from './routes';
 import ApiError from './utils/ApiError';
 import morgan from './config/morgan';
 import { errorConverter, errorHandler } from './middlewares/error.middleware';
+import config from './config/config';
 
 const app: Application = express();
 
-if (process.env.NODE_ENV !== 'test') {
+if (config.env !== 'test') {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
 }
