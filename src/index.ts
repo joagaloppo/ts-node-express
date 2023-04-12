@@ -1,19 +1,27 @@
 import 'dotenv/config';
-import express, { Application } from 'express';
-import passport from './config/passport';
-import router from './routes/index';
+import app from './app';
 
-const app: Application = express();
 const port = process.env.PORT || 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(passport.initialize());
-app.use(router);
-
-export const server = app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`[server] listening at http://localhost:${port}`);
-  // console.log(`[server] environment: ${process.env.NODE_ENV}`);
+  console.log(`[server] environment: ${process.env.NODE_ENV}`);
 });
 
-export default app;
+process.on('SIGTERM', () => {
+  console.info('SIGTERM signal received, shutting down gracefully');
+  server.close(() => {
+    console.log('server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.info('SIGINT signal received, shutting down gracefully');
+  server.close(() => {
+    console.log('server closed');
+    process.exit(0);
+  });
+});
+
+export default server;

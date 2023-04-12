@@ -3,7 +3,7 @@
   "description": "A simple boilerplate for building RESTful APIs using TypeScript, Node.js, Express, and Prisma",
   "author": "Joaquin Galoppo",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "license": "ISC",
   "keywords": [],
   "scripts": {
