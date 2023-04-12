@@ -2,9 +2,15 @@ import express, { Application } from 'express';
 import passport from './config/passport';
 import router from './routes';
 import ApiError from './utils/ApiError';
+import morgan from './config/morgan';
 import { errorConverter, errorHandler } from './middlewares/error.middleware';
 
 const app: Application = express();
+
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan.successHandler);
+  app.use(morgan.errorHandler);
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
