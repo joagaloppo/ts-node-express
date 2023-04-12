@@ -1,8 +1,9 @@
 import express, { Application } from 'express';
+import cors from 'cors';
 import passport from './config/passport';
+import morgan from './config/morgan';
 import router from './routes';
 import ApiError from './utils/ApiError';
-import morgan from './config/morgan';
 import { errorConverter, errorHandler } from './middlewares/error.middleware';
 import config from './config/config';
 
@@ -15,6 +16,10 @@ if (config.env !== 'test') {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(cors());
+app.options('*', cors());
+
 app.use(passport.initialize());
 app.use(router);
 
