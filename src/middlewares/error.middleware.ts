@@ -40,7 +40,7 @@ const errorHandler = (err: CustomError, req: Request, res: Response, next: NextF
   if (config.env === 'development') logger.error(err);
 
   if (!statusCode) statusCode = 500;
-  res.status(statusCode).send(response);
+  return res.status(statusCode).send(response);
 };
 
 export { errorConverter, errorHandler };
