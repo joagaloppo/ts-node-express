@@ -1,5 +1,6 @@
 import express, { Application } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import passport from './config/passport';
 import morgan from './config/morgan';
 import router from './routes';
@@ -13,6 +14,8 @@ if (config.env !== 'test') {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
 }
+
+app.use(helmet());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
