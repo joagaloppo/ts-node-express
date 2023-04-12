@@ -1,5 +1,9 @@
 import 'dotenv/config';
 
+if (!process.env.NODE_ENV) {
+  throw new Error('Please configure your environment in .env file');
+}
+
 // check if database url is undefined and if so, use throw an error
 if (!process.env.DATABASE_URL) {
   throw new Error('Please configure your database url in .env file');
@@ -33,7 +37,7 @@ if (
 }
 
 const config = {
-  env: process.env.NODE_ENV || 'development',
+  env: process.env.NODE_ENV,
   port: Number(process.env.PORT) || 3000,
   database_url: process.env.DATABASE_URL,
   jwt: {

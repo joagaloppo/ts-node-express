@@ -7,8 +7,8 @@
   "license": "ISC",
   "keywords": [],
   "scripts": {
-    "dev": "set NODE_ENV=development && nodemon src/index.ts",
-    "start": "set NODE_ENV=production && node dist/index.js",
+    "dev": "cross-env NODE_ENV=development nodemon src/index.ts",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
     "build": "tsc",
     "test": "jest -i --colors --verbose --detectOpenHandles",
     "test:watch": "jest -i --watchAll",
@@ -23,6 +23,7 @@
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "helmet": "^6.1.5",
