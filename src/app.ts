@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
+import cors from 'cors';
 import passport from './config/passport';
 import morgan from './config/morgan';
 import router from './routes';
@@ -19,6 +20,8 @@ app.use(helmet());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(compression());
 
 app.use(cors());
 app.options('*', cors());
