@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import ApiError from '../utils/ApiError';
+import logger from '../config/logger';
 
 type CustomError = {
   statusCode?: number;
@@ -35,7 +36,7 @@ const errorHandler = (err: CustomError, req: Request, res: Response, next: NextF
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   };
 
-  if (process.env.NODE_ENV === 'development') console.log(err);
+  if (process.env.NODE_ENV === 'development') logger.error(err);
 
   if (!statusCode) statusCode = 500;
   res.status(statusCode).send(response);
