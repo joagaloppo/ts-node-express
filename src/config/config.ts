@@ -1,62 +1,61 @@
 import 'dotenv/config';
+import Joi from 'joi';
 
-// check if database url is undefined and if so, use throw an error
-if (!process.env.DATABASE_URL) {
-  throw new Error('Please configure your database url in .env file');
-}
+const envVarsSchema = Joi.object()
+  .keys({
+    NODE_ENV: Joi.string().valid('production', 'development', 'test').required(),
+    PORT: Joi.number().default(3000),
+    DATABASE_URL: Joi.string().required().description('Database URL'),
+    JWT_SECRET: Joi.string().required().description('JWT secret key'),
+    JWT_ACCESS_EXPIRATION_MINUTES: Joi.number().default(30).description('minutes after which access tokens expire'),
+    JWT_REFRESH_EXPIRATION_DAYS: Joi.number().default(30).description('days after which refresh tokens expire'),
+    JWT_RESET_PASSWORD_EXPIRATION_MINUTES: Joi.number()
+      .default(10)
+      .description('minutes after which reset password token expires'),
+    JWT_VERIFY_EMAIL_EXPIRATION_MINUTES: Joi.number()
+      .default(10)
+      .description('minutes after which verify email token expires'),
+    GOOGLE_CLIENT_ID: Joi.string().required().description('Google OAuth client id'),
+    GOOGLE_CLIENT_SECRET: Joi.string().required().description('Google OAuth client secret'),
+    SMTP_HOST: Joi.string().description('server that will send the emails').required(),
+    SMTP_PORT: Joi.number().description('port to connect to the email server').required(),
+    SMTP_USERNAME: Joi.string().description('username for email server').required(),
+    SMTP_PASSWORD: Joi.string().description('password for email server').required(),
+    EMAIL_FROM: Joi.string().description('the from field in the emails sent by the app').required(),
+  })
+  .unknown();
 
-// check if jwt keys are undefined and if so, use throw an error
-if (
-  !process.env.JWT_SECRET ||
-  !process.env.JWT_ACCESS_EXPIRATION_MINUTES ||
-  !process.env.JWT_REFRESH_EXPIRATION_DAYS ||
-  !process.env.JWT_RESET_PASSWORD_EXPIRATION_MINUTES ||
-  !process.env.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES
-) {
-  throw new Error('Please configure your JWT data in .env file');
-}
+const { value: envVars, error } = envVarsSchema.prefs({ errors: { label: 'key' } }).validate(process.env);
 
-// check if google keys are undefined and if so, use throw an error
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  throw new Error('Please configure your Google OAuth credentials in .env file');
-}
-
-// check if email SMTP keys are undefined and if so, use throw an error
-if (
-  !process.env.SMTP_HOST ||
-  !process.env.SMTP_PORT ||
-  !process.env.SMTP_USERNAME ||
-  !process.env.SMTP_PASSWORD ||
-  !process.env.EMAIL_FROM
-) {
-  throw new Error('Please configure your email data in .env file');
+if (error) {
+  throw new Error(`Config validation error: ${error.message}`);
 }
 
 const config = {
-  env: process.env.NODE_ENV || 'development',
-  port: Number(process.env.PORT) || 3000,
-  database_url: process.env.DATABASE_URL,
+  env: envVars.NODE_ENV,
+  port: envVars.PORT,
+  database_url: envVars.DATABASE_URL,
   jwt: {
-    secret: process.env.JWT_SECRET,
-    accessExpiratonMinutes: process.env.JWT_ACCESS_EXPIRATION_MINUTES,
-    refreshExpiratonDays: process.env.JWT_REFRESH_EXPIRATION_DAYS,
-    resetPasswordExpiratonMinutes: process.env.JWT_RESET_PASSWORD_EXPIRATION_MINUTES,
-    verifyEmailExpiratonMinutes: process.env.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
+    secret: envVars.JWT_SECRET,
+    accessExpirationMinutes: envVars.JWT_ACCESS_EXPIRATION_MINUTES,
+    refreshExpirationDays: envVars.JWT_REFRESH_EXPIRATION_DAYS,
+    resetPasswordExpirationMinutes: envVars.JWT_RESET_PASSWORD_EXPIRATION_MINUTES,
+    verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
   },
   google: {
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    clientId: envVars.GOOGLE_CLIENT_ID,
+    clientSecret: envVars.GOOGLE_CLIENT_SECRET,
   },
   email: {
     smtp: {
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
+      host: envVars.SMTP_HOST,
+      port: envVars.SMTP_PORT,
       auth: {
-        user: process.env.SMTP_USERNAME,
-        pass: process.env.SMTP_PASSWORD,
+        user: envVars.SMTP_USERNAME,
+        pass: envVars.SMTP_PASSWORD,
       },
     },
-    from: process.env.EMAIL_FROM,
+    from: envVars.EMAIL_FROM,
   },
 };
 

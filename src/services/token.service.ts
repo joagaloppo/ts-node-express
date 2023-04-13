@@ -41,10 +41,10 @@ const verifyToken = async (token: string, type: TokenTypes) => {
 };
 
 const generateAuthTokens = async (userId: string) => {
-  const accessTokenExpires = moment().add(config.jwt.accessExpiratonMinutes, 'minutes');
+  const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
   const accessToken = generateToken(userId, accessTokenExpires, TokenTypes.ACCESS);
 
-  const refreshTokenExpires = moment().add(config.jwt.refreshExpiratonDays, 'days');
+  const refreshTokenExpires = moment().add(config.jwt.refreshExpirationDays, 'days');
   const refreshToken = generateToken(userId, refreshTokenExpires, TokenTypes.REFRESH);
   await saveToken(refreshToken, userId, refreshTokenExpires, TokenTypes.REFRESH);
 
@@ -61,14 +61,14 @@ const generateAuthTokens = async (userId: string) => {
 };
 
 const generateVerifyEmailToken = async (user: User) => {
-  const verifyEmailTokenExpires = moment().add(config.jwt.verifyEmailExpiratonMinutes, 'minutes');
+  const verifyEmailTokenExpires = moment().add(config.jwt.verifyEmailExpirationMinutes, 'minutes');
   const verifyEmailToken = generateToken(user.id, verifyEmailTokenExpires, TokenTypes.VERIFY_EMAIL);
   await saveToken(verifyEmailToken, user.id, verifyEmailTokenExpires, TokenTypes.VERIFY_EMAIL);
   return verifyEmailToken;
 };
 
 const generateResetPasswordToken = async (user: User) => {
-  const resetPasswordTokenExpires = moment().add(config.jwt.resetPasswordExpiratonMinutes, 'minutes');
+  const resetPasswordTokenExpires = moment().add(config.jwt.resetPasswordExpirationMinutes, 'minutes');
   const resetPasswordToken = generateToken(user.id, resetPasswordTokenExpires, TokenTypes.RESET_PASSWORD);
   await saveToken(resetPasswordToken, user.id, resetPasswordTokenExpires, TokenTypes.RESET_PASSWORD);
   return resetPasswordToken;
