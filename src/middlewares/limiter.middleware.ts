@@ -1,13 +1,12 @@
 import rateLimit from 'express-rate-limit';
+import ApiError from '../utils/ApiError';
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   skipSuccessfulRequests: true,
-  handler(req, res) {
-    res.status(429).json({
-      message: 'Too many requests, please try again later.',
-    });
+  handler(req, res, next) {
+    next(new ApiError(429, 'Too many requests, please try again later.'));
   },
 });
 
