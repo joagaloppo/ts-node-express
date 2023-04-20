@@ -4,6 +4,7 @@ import passport from 'passport';
 import httpStatus from 'http-status';
 import ApiError from '../utils/ApiError';
 import catchAsync from '../utils/catchAsync';
+import config from '../config/config';
 import { authService, userService, tokenService, emailService } from '../services';
 
 const register = catchAsync(async (req: Request, res: Response) => {
@@ -26,8 +27,7 @@ const googleAuthCallback = catchAsync(async (req: Request, res: Response, next: 
     if (err) return res.status(httpStatus.BAD_REQUEST).json({ message: err.message });
     if (!user) return res.status(httpStatus.BAD_REQUEST).json({ message: 'Something went wrong' });
     const tokens = await tokenService.generateAuthTokens(user.id);
-    // replace this url with the link to the google auth callback page in your frontend app
-    return res.redirect(`http://localhost:4000/login?user=${JSON.stringify(user)}&tokens=${JSON.stringify(tokens)}`);
+    return res.redirect(`${config.google.redirectUrl}?access=${tokens.access.token}&refresh=${tokens.refresh.token}`);
   })(req, res, next);
 });
 
@@ -64,7 +64,8 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 });
 
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
-  const { token, password } = req.body;
+  const { token } = req.query;
+  const { password } = req.body;
   // TO-DO: delete all refresh tokens of the user
   if (!token || typeof token !== 'string') throw new ApiError(400, 'Invalid token');
   await authService.resetPassword(token, password);

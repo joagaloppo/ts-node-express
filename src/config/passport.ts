@@ -4,10 +4,6 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { authService, userService } from '../services';
 import config from './config';
 
-if (!config.google.clientId || !config.google.clientSecret) {
-  throw new Error('Environment variables not set');
-}
-
 const jwtOptions = {
   secretOrKey: config.jwt.secret,
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

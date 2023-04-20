@@ -3,10 +3,10 @@ import ApiError from '../utils/ApiError';
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 20,
   skipSuccessfulRequests: true,
   handler(req, res, next) {
-    next(new ApiError(429, 'Too many requests, please try again later.'));
+    next(new ApiError(429, 'Too many requests, please try again later'));
   },
 });
 

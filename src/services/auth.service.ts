@@ -14,7 +14,11 @@ const loginWithCredentials = async (email: string, password: string) => {
 
 const loginWithGoogle = async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
   try {
-    const user = await userService.getUserByGoogleId(profile.id);
+    if (!profile.emails?.[0].value) throw new ApiError(400, 'Email not found');
+    const user = await userService.getUserByEmail(profile.emails?.[0].value);
+    if (user && !user?.googleId) await prisma.user.update({ where: { id: user?.id }, data: { googleId: profile.id } });
+    if (user && !user?.emailVerified)
+      await prisma.user.update({ where: { id: user?.id }, data: { emailVerified: true } });
     if (user) return done(null, user);
     const newUser = await userService.createUser({
       googleId: profile.id,
