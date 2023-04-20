@@ -1,9 +1,12 @@
 import { PrismaClient, User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import ApiError from '../utils/ApiError';
 
 const prisma = new PrismaClient();
 
 const createUser = async (userBody: any) => {
+  const userExists = await prisma.user.findUnique({ where: { email: userBody.email } });
+  if (userExists) throw new ApiError(400, 'User with that email already exists');
   const newUser = { ...userBody };
   if (newUser.password) newUser.password = await bcrypt.hash(newUser.password, 10);
   const user = await prisma.user.create({ data: { ...newUser } });
