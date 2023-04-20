@@ -10,7 +10,7 @@
     "dev": "cross-env NODE_ENV=development nodemon src/index.ts",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "build": "tsc",
-    "test": "jest -i --colors --verbose --detectOpenHandles",
+    "test": "jest -i --watchAll --detectOpenHandles",
     "test:watch": "jest -i --watchAll",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
@@ -41,6 +41,7 @@
     "winston": "^3.8.2"
   },
   "devDependencies": {
+    "@faker-js/faker": "^7.6.0",
     "@types/bcryptjs": "^2.4.2",
     "@types/compression": "^1.7.2",
     "@types/cors": "^2.8.13",
