@@ -87,11 +87,12 @@ Access the server at `http://localhost:3000`
 - [x]  Enable gzip compression using compression middleware
 - [x]  Integrate input validation (e.g., joi or express-validator)
 - [x]  Add rate limiting (e.g., express-rate-limiter)
-- [ ]  Support more authentication methods (e.g., facebook)
-- [ ]  Add support for WebSocket (e.g., socket.io)
+- [x]  Write integration tests (e.g., supertest)
+- [ ]  Write unit tests (e.g., jest, mocha, chai, supertest)
 - [ ]  Implement role-based access control (RBAC)
 - [ ]  Integrate API documentation (e.g., Swagger)
-- [ ]  Write unit and integration tests (e.g., jest, mocha, chai, supertest)
+- [ ]  Support more authentication methods (e.g., facebook)
+- [ ]  Add support for WebSocket (e.g., socket.io)
 - [ ]  Add a CI/CD pipeline (e.g., GitHub Actions, GitLab CI/CD, Jenkins)
 - [ ]  Use a process manager (e.g., pm2, forever) in production
 - [ ]  Include caching (e.g., redis)
