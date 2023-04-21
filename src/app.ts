@@ -15,6 +15,7 @@ const app: Application = express();
 if (config.env !== 'test') {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
+  app.use('/auth', limiter);
 }
 
 app.use(helmet());
@@ -29,7 +30,6 @@ app.options('*', cors());
 
 app.use(passport.initialize());
 
-app.use('/auth', limiter);
 app.use(router);
 
 app.use((req, res, next) => next(new ApiError(404, `Cannot ${req.method} ${req.path}`)));
