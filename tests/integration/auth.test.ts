@@ -1,6 +1,7 @@
-import { PrismaClient, User, TokenTypes } from '@prisma/client';
+import { PrismaClient, TokenTypes } from '@prisma/client';
 import request from 'supertest';
 import moment from 'moment';
+import bcrypt from 'bcryptjs';
 import { faker } from '@faker-js/faker';
 import { insertRandomUser } from '../fixtures/user.fixture';
 
@@ -11,16 +12,10 @@ import generateValidToken from '../fixtures/token.fixture';
 
 const prisma = new PrismaClient();
 
-interface IUser {
-  name: string;
-  email: string;
-  password: string;
-}
-
 describe('Auth', () => {
   afterAll(async () => prisma.$disconnect());
   describe('POST /auth/register', () => {
-    let newUser: IUser;
+    let newUser: { name: string; email: string; password: string };
     beforeEach(() => {
       newUser = {
         name: faker.name.fullName(),
@@ -212,6 +207,144 @@ describe('Auth', () => {
       const user = await insertRandomUser();
       jest.spyOn(emailService.transport, 'sendMail').mockRejectedValue(new Error('Email service failed'));
       await request(app).post('/auth/forgot-password').send({ email: user.email }).expect(500);
+    });
+  });
+
+  describe('POST /auth/reset-password', () => {
+    it('should return 204 and reset the password', async () => {
+      const user = await insertRandomUser();
+      const resetPasswordToken = await generateValidToken(user.id, TokenTypes.RESET_PASSWORD);
+
+      await request(app)
+        .post('/auth/reset-password')
+        .query({ token: resetPasswordToken })
+        .send({ password: 'newPassword' })
+        .expect(204);
+
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      const passMatch = await bcrypt.compare('newPassword', dbUser?.password as string);
+      expect(dbUser?.password).not.toEqual(user.password);
+      expect(passMatch).toBeTruthy();
+    });
+
+    it('should return 400 if password is missing or is invalid', async () => {
+      const user = await insertRandomUser();
+      const resetPasswordToken = await generateValidToken(user.id, TokenTypes.RESET_PASSWORD);
+      await request(app).post('/auth/reset-password').query({ token: resetPasswordToken }).send().expect(400);
+      await request(app)
+        .post('/auth/reset-password')
+        .query({ token: resetPasswordToken })
+        .send({ password: 'short' })
+        .expect(400);
+    });
+
+    it('should return 400 if token is missing', async () => {
+      await request(app).post('/auth/reset-password').send({ password: 'newPassword' }).expect(400);
+    });
+
+    it('should return 400 if token is not a reset password token', async () => {
+      const user = await insertRandomUser();
+      const resetPasswordToken = await generateValidToken(user.id, TokenTypes.VERIFY_EMAIL);
+      await request(app)
+        .post('/auth/reset-password')
+        .query({ token: resetPasswordToken })
+        .send({ password: 'newPassword' })
+        .expect(400);
+    });
+
+    it('should return 500 if token is expired', async () => {
+      const user = await insertRandomUser();
+      const resetPasswordToken = await generateValidToken(user.id, TokenTypes.RESET_PASSWORD, true);
+      await request(app)
+        .post('/auth/reset-password')
+        .query({ token: resetPasswordToken })
+        .send({ password: 'newPassword' })
+        .expect(500);
+    });
+
+    it('should return 500 if token is using a different secret', async () => {
+      const user = await insertRandomUser();
+      const resetPasswordToken = await generateValidToken(
+        user.id,
+        TokenTypes.RESET_PASSWORD,
+        false,
+        faker.random.alphaNumeric(32)
+      );
+      await request(app)
+        .post('/auth/reset-password')
+        .query({ token: resetPasswordToken })
+        .send({ password: 'newPassword' })
+        .expect(500);
+    });
+  });
+
+  describe('POST /auth/send-verification-email', () => {
+    beforeEach(async () => {
+      // eslint-disable-next-line
+      jest.spyOn(emailService.transport, 'sendMail').mockResolvedValue(true as any);
+    });
+
+    it('should return 204 and send verification email to the user', async () => {
+      const user = await insertRandomUser();
+      const token = await generateValidToken(user.id, TokenTypes.ACCESS);
+      const sendVerificationEmailSpy = jest.spyOn(emailService, 'sendVerificationEmail');
+
+      await request(app).post('/auth/send-verification-email').set('Authorization', `Bearer ${token}`).expect(204);
+      expect(sendVerificationEmailSpy).toHaveBeenCalledWith(user.email, expect.any(String));
+
+      const verificationToken = sendVerificationEmailSpy.mock.calls[0][1];
+      const dbVerificationToken = await prisma.token.findUnique({ where: { token: verificationToken } });
+      expect(dbVerificationToken?.userId).toEqual(user.id);
+    });
+
+    it('should return 401 if access token is missing', async () => {
+      await request(app).post('/auth/send-verification-email').expect(401);
+    });
+
+    it('should return 500 if email service fails', async () => {
+      const user = await insertRandomUser();
+      const token = await generateValidToken(user.id, TokenTypes.ACCESS);
+      jest.spyOn(emailService.transport, 'sendMail').mockRejectedValue(new Error('Email service failed'));
+      await request(app).post('/auth/send-verification-email').set('Authorization', `Bearer ${token}`).expect(500);
+    });
+  });
+
+  describe('POST /auth/verify-email', () => {
+    it('should return 204 and verify the email', async () => {
+      const user = await insertRandomUser();
+      const verificationToken = await generateValidToken(user.id, TokenTypes.VERIFY_EMAIL);
+
+      await request(app).post('/auth/verify-email').query({ token: verificationToken }).expect(204);
+
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(dbUser?.emailVerified).toBeTruthy();
+    });
+
+    it('should return 400 if token is missing', async () => {
+      await request(app).post('/auth/verify-email').expect(400);
+    });
+
+    it('should return 400 if token is not a verification token', async () => {
+      const user = await insertRandomUser();
+      const verificationToken = await generateValidToken(user.id, TokenTypes.RESET_PASSWORD);
+      await request(app).post('/auth/verify-email').query({ token: verificationToken }).expect(400);
+    });
+
+    it('should return 500 if token is expired', async () => {
+      const user = await insertRandomUser();
+      const verificationToken = await generateValidToken(user.id, TokenTypes.VERIFY_EMAIL, true);
+      await request(app).post('/auth/verify-email').query({ token: verificationToken }).expect(500);
+    });
+
+    it('should return 500 if token is using a different secret', async () => {
+      const user = await insertRandomUser();
+      const verificationToken = await generateValidToken(
+        user.id,
+        TokenTypes.VERIFY_EMAIL,
+        false,
+        faker.random.alphaNumeric(32)
+      );
+      await request(app).post('/auth/verify-email').query({ token: verificationToken }).expect(500);
     });
   });
 });
