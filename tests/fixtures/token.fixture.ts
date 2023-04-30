@@ -1,7 +1,6 @@
-import moment from 'moment';
 import { PrismaClient, TokenTypes } from '@prisma/client';
+import moment from 'moment';
 import jwt from 'jsonwebtoken';
-import tokenService from '../../src/services/token.service';
 import config from '../../src/config/config';
 
 const Prisma = new PrismaClient();

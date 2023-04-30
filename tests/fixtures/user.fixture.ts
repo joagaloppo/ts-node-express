@@ -34,4 +34,4 @@ const insertRandomUser = async (): Promise<User> => {
   return dbUser;
 };
 
-export { randomUser, insertUser, insertRandomUser };
+export default insertRandomUser;
