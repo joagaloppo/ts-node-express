@@ -8,15 +8,12 @@
   "keywords": [],
   "scripts": {
     "dev": "cross-env NODE_ENV=development nodemon src/index.ts",
-    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "start": "pm2 start ecosystem.config.json --no-daemon",
     "build": "tsc",
     "test": "jest",
-    "test:watch": "jest -i --watchAll",
-    "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix",
-    "prettier": "prettier --check src/**/*.ts",
-    "prettier:fix": "prettier --write src/**/*.ts",
-    "generate": "npx prisma generate"
+    "lint": "eslint src/**/*.ts  && prettier --check src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix && prettier --write src/**/*.ts",
+    "prisma:gen": "npx prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^4.12.0",
@@ -37,6 +34,7 @@
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
+    "pm2": "^5.3.0",
     "prisma": "^4.12.0",
     "winston": "^3.8.2"
   },
