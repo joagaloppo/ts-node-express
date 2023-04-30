@@ -4,8 +4,7 @@ import config from './config/config';
 import logger from './config/logger';
 
 const server = app.listen(config.port, () => {
-  logger.info(`listening at http://localhost:${config.port}`);
-  logger.info(`environment: ${config.env}`);
+  logger.info(`server started on port ${config.port} (${config.env})`);
 });
 
 process.on('SIGTERM', () => {
