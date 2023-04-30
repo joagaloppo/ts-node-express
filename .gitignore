@@ -1,11 +1,19 @@
-# Node modules
+# Distribution / packaging
 node_modules
+dist
+dist-ssr
+*.local
 
 # Visual Studio Code
-.vscode
-
-# Distribution / packaging
-dist
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # Environment variables
 .env*
