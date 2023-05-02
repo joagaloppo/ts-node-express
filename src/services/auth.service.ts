@@ -1,35 +1,40 @@
 import bcrypt from 'bcryptjs';
 import { PrismaClient, TokenTypes } from '@prisma/client';
-import { VerifyCallback } from 'passport-google-oauth20';
-import { Profile } from 'passport';
 import { userService, tokenService } from '.';
 import ApiError from '../utils/ApiError';
 
 const prisma = new PrismaClient();
+
 const loginWithCredentials = async (email: string, password: string) => {
   const user = await userService.getUserByEmail(email);
   if (user && user.password && bcrypt.compareSync(password, user.password)) return user;
   throw new ApiError(401, 'Incorrect email or password');
 };
 
-const loginWithGoogle = async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
-  try {
-    if (!profile.emails?.[0].value) throw new ApiError(400, 'Email not found');
-    const user = await userService.getUserByEmail(profile.emails?.[0].value);
-    if (user && !user?.googleId) await prisma.user.update({ where: { id: user?.id }, data: { googleId: profile.id } });
-    if (user && !user?.emailVerified)
-      await prisma.user.update({ where: { id: user?.id }, data: { emailVerified: true } });
-    if (user) return done(null, user);
-    const newUser = await userService.createUser({
-      googleId: profile.id,
-      email: profile.emails?.[0].value,
-      name: profile.displayName,
+const loginWithGoogle = async (token: string) => {
+  const google = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { Authorization: `Bearer ${token}` },
+  }).then((res) => res.json());
+
+  if (!google) throw new ApiError(400, 'Google login failed');
+  if (!google.email) throw new ApiError(400, 'Email not found');
+
+  const existingUser = await userService.getUserByEmail(google.email);
+
+  if (!existingUser)
+    return userService.createUser({
+      googleId: google.sub,
+      email: google.email,
+      name: google.name,
       emailVerified: true,
     });
-    return done(null, newUser);
-  } catch (error) {
-    return done(error as Error);
-  }
+
+  if (!existingUser.googleId)
+    await prisma.user.update({ where: { id: existingUser.id }, data: { googleId: google.sub } });
+  if (!existingUser.emailVerified)
+    await prisma.user.update({ where: { id: existingUser.id }, data: { emailVerified: true } });
+
+  return existingUser;
 };
 
 const refreshAuth = async (refreshToken: string) => {

@@ -1,10 +1,8 @@
 import { User } from '@prisma/client';
-import { Request, Response, NextFunction } from 'express';
-import passport from 'passport';
+import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import ApiError from '../utils/ApiError';
 import catchAsync from '../utils/catchAsync';
-import config from '../config/config';
 import { authService, userService, tokenService, emailService } from '../services';
 
 const register = catchAsync(async (req: Request, res: Response) => {
@@ -20,15 +18,11 @@ const login = catchAsync(async (req: Request, res: Response) => {
   return res.status(httpStatus.OK).json({ user, tokens });
 });
 
-const googleAuth = passport.authenticate('google', { scope: ['profile', 'email'] });
-
-const googleAuthCallback = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate('google', { session: false }, async (err, user) => {
-    if (err) return res.status(httpStatus.BAD_REQUEST).json({ message: err.message });
-    if (!user) return res.status(httpStatus.BAD_REQUEST).json({ message: 'Something went wrong' });
-    const tokens = await tokenService.generateAuthTokens(user.id);
-    return res.redirect(`${config.google.redirectUrl}?access=${tokens.access.token}&refresh=${tokens.refresh.token}`);
-  })(req, res, next);
+const google = catchAsync(async (req: Request, res: Response) => {
+  const { token } = req.body;
+  const user = await authService.loginWithGoogle(token);
+  const tokens = await tokenService.generateAuthTokens(user.id);
+  return res.status(httpStatus.OK).json({ user, tokens });
 });
 
 const refreshTokens = catchAsync(async (req: Request, res: Response) => {
@@ -75,8 +69,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 const authController = {
   register,
   login,
-  googleAuth,
-  googleAuthCallback,
+  google,
   refreshTokens,
   logout,
   sendVerificationEmail,

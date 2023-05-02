@@ -1,18 +1,11 @@
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { authService, userService } from '../services';
+import { userService } from '../services';
 import config from './config';
 
 const jwtOptions = {
   secretOrKey: config.jwt.secret,
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-};
-
-const googleOptions = {
-  clientID: config.google.clientId,
-  clientSecret: config.google.clientSecret,
-  callbackURL: '/auth/google/callback',
 };
 
 passport.use(
@@ -26,7 +19,5 @@ passport.use(
     }
   })
 );
-
-passport.use(new GoogleStrategy(googleOptions, authService.loginWithGoogle));
 
 export default passport;
