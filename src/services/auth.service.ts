@@ -1,11 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { PrismaClient, TokenTypes } from '@prisma/client';
-import { VerifyCallback } from 'passport-google-oauth20';
-import { Profile } from 'passport';
 import { userService, tokenService } from '.';
 import ApiError from '../utils/ApiError';
 
 const prisma = new PrismaClient();
+
 const loginWithCredentials = async (email: string, password: string) => {
   const user = await userService.getUserByEmail(email);
   if (user && user.password && bcrypt.compareSync(password, user.password)) return user;

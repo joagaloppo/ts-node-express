@@ -20,6 +20,12 @@ const login = {
   }),
 };
 
+const google = {
+  body: Joi.object().keys({
+    token: tokenValidation,
+  }),
+};
+
 const logout = {
   body: Joi.object().keys({
     refreshToken: tokenValidation,
@@ -56,6 +62,7 @@ const resetPassword = {
 const authValidation = {
   register,
   login,
+  google,
   logout,
   refreshTokens,
   verifyEmail,

@@ -15,9 +15,6 @@ const envVarsSchema = Joi.object()
     JWT_VERIFY_EMAIL_EXPIRATION_MINUTES: Joi.number()
       .default(10)
       .description('minutes after which verify email token expires'),
-    GOOGLE_CLIENT_ID: Joi.string().required().description('Google OAuth client id'),
-    GOOGLE_CLIENT_SECRET: Joi.string().required().description('Google OAuth client secret'),
-    GOOGLE_REDIRECT_URL: Joi.string().required().description('Google OAuth redirect url'),
     SMTP_HOST: Joi.string().description('server that will send the emails').required(),
     SMTP_PORT: Joi.number().description('port to connect to the email server').required(),
     SMTP_USERNAME: Joi.string().description('username for email server').required(),
@@ -44,11 +41,6 @@ const config = {
     refreshExpirationDays: envVars.JWT_REFRESH_EXPIRATION_DAYS,
     resetPasswordExpirationMinutes: envVars.JWT_RESET_PASSWORD_EXPIRATION_MINUTES,
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
-  },
-  google: {
-    clientId: envVars.GOOGLE_CLIENT_ID,
-    clientSecret: envVars.GOOGLE_CLIENT_SECRET,
-    redirectUrl: envVars.GOOGLE_REDIRECT_URL,
   },
   email: {
     smtp: {

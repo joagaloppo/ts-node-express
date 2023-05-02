@@ -28,11 +28,6 @@ const getUserById = async (id: string) => {
   return user;
 };
 
-const getUserByGoogleId = async (googleId: string) => {
-  const user = await prisma.user.findUnique({ where: { googleId } });
-  return user;
-};
-
 const updateUserById = async (id: string, userBody: User) => {
   const user = await prisma.user.update({ where: { id }, data: { ...userBody } });
   return user;
@@ -53,7 +48,6 @@ const userService = {
   getUsers,
   getUserByEmail,
   getUserById,
-  getUserByGoogleId,
   updateUserById,
   deleteUserById,
   deleteAllUsers,
