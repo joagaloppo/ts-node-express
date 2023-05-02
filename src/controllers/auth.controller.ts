@@ -20,6 +20,13 @@ const login = catchAsync(async (req: Request, res: Response) => {
   return res.status(httpStatus.OK).json({ user, tokens });
 });
 
+const google = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { token } = req.body;
+  const user = await authService.loginWithGoogle(token);
+  const tokens = await tokenService.generateAuthTokens(user.id);
+  return res.status(httpStatus.OK).json({ user, tokens });
+});
+
 const googleAuth = passport.authenticate('google', { scope: ['profile', 'email'] });
 
 const googleAuthCallback = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -75,6 +82,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 const authController = {
   register,
   login,
+  google,
   googleAuth,
   googleAuthCallback,
   refreshTokens,

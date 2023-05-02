@@ -9,6 +9,7 @@ const router = express.Router();
 // Credentials auth
 router.post('/register', validate(authValidation.register), authController.register);
 router.post('/login', validate(authValidation.login), authController.login);
+router.post('/google', authController.google);
 
 // Google auth
 router.get('/google', authController.googleAuth);
