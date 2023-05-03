@@ -20,8 +20,10 @@ const upsertUserPassword = async (token: string, password: string) => {
 
 const loginWithCredentials = async (email: string, password: string) => {
   const user = await userService.getUserByEmail(email);
-  if (user && user.password && bcrypt.compareSync(password, user.password)) return user;
-  throw new ApiError(401, 'Incorrect email or password');
+  if (!user) throw new ApiError(401, 'This email is not registered');
+  if (!user.password) throw new ApiError(401, 'This account was created with Google');
+  if (!bcrypt.compareSync(password, user.password)) throw new ApiError(401, 'The password is incorrect');
+  return user;
 };
 
 const loginWithGoogle = async (token: string) => {
@@ -37,8 +39,7 @@ const loginWithGoogle = async (token: string) => {
 
 const logout = async (refreshToken: string) => {
   const refreshTokenDoc = await prisma.token.findUnique({ where: { token: refreshToken } });
-  if (!refreshTokenDoc) throw new ApiError(404, 'Refresh token not found');
-  await prisma.token.delete({ where: { id: refreshTokenDoc.id } });
+  if (refreshTokenDoc) await prisma.token.delete({ where: { id: refreshTokenDoc.id } });
 };
 
 const refreshAuth = async (refreshToken: string) => {
