@@ -5,6 +5,21 @@ import ApiError from '../utils/ApiError';
 
 const prisma = new PrismaClient();
 
+const createOrEditUser = async (token: string, password: string) => {
+  const user = await tokenService.verifyPasswordToken(token);
+  const userExists = await userService.getUserByEmail(user.email);
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  return userExists
+    ? prisma.user.update({
+        where: { id: userExists.id },
+        data: { password: hashedPassword },
+      })
+    : prisma.user.create({
+        data: { name: user.name, email: user.email, password: hashedPassword },
+      });
+};
+
 const loginWithCredentials = async (email: string, password: string) => {
   const user = await userService.getUserByEmail(email);
   if (user && user.password && bcrypt.compareSync(password, user.password)) return user;
@@ -72,11 +87,12 @@ const resetPassword = async (token: string, password: string) => {
   await prisma.token.deleteMany({ where: { id: { in: refreshTokens.map((t) => t.id) } } });
 
   await prisma.token.delete({ where: { id: tokenDoc.id } });
-  const hashedPassword = bcrypt.hashSync(password, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
   await prisma.user.update({ where: { id: user.id }, data: { password: hashedPassword } });
 };
 
 const authService = {
+  createOrEditUser,
   loginWithCredentials,
   loginWithGoogle,
   refreshAuth,

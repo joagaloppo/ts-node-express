@@ -8,8 +8,14 @@ const tokenValidation = Joi.string().required().max(500).trim();
 const register = {
   body: Joi.object().keys({
     email: emailValidation,
-    password: passwordValidation,
     name: nameValidation,
+  }),
+};
+
+const setPassword = {
+  body: Joi.object().keys({
+    token: tokenValidation,
+    password: passwordValidation,
   }),
 };
 
@@ -38,12 +44,6 @@ const refreshTokens = {
   }),
 };
 
-const verifyEmail = {
-  query: Joi.object().keys({
-    token: tokenValidation,
-  }),
-};
-
 const forgotPassword = {
   body: Joi.object().keys({
     email: emailValidation,
@@ -61,11 +61,11 @@ const resetPassword = {
 
 const authValidation = {
   register,
+  setPassword,
   login,
   google,
   logout,
   refreshTokens,
-  verifyEmail,
   forgotPassword,
   resetPassword,
 };

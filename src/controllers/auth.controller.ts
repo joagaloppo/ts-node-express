@@ -6,9 +6,20 @@ import catchAsync from '../utils/catchAsync';
 import { authService, userService, tokenService, emailService } from '../services';
 
 const register = catchAsync(async (req: Request, res: Response) => {
-  const user = await userService.createUser(req.body);
+  const { name, email } = req.body;
+  const userExists = await userService.getUserByEmail(email);
+  if (userExists) throw new ApiError(400, 'This email is already being used');
+  const token = await tokenService.generatePasswordToken(name, email);
+  await emailService.sendPasswordEmail(email, token);
+  return res.status(httpStatus.NO_CONTENT).send();
+});
+
+const setPassword = catchAsync(async (req: Request, res: Response) => {
+  const { token, password } = req.body;
+  const user = await authService.createOrEditUser(token, password);
+  // TO-DO: delete all refresh tokens of the user.
   const tokens = await tokenService.generateAuthTokens(user.id);
-  return res.status(httpStatus.CREATED).json({ user, tokens });
+  return res.status(httpStatus.OK).json({ user, tokens });
 });
 
 const login = catchAsync(async (req: Request, res: Response) => {
@@ -51,23 +62,19 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
   const { email } = req.body;
   const user = await userService.getUserByEmail(email);
-  if (!user) throw new ApiError(404, 'User not found');
-  const resetPasswordToken = await tokenService.generateResetPasswordToken(user);
-  await emailService.sendResetPasswordEmail(email, resetPasswordToken);
+  if (!user) throw new ApiError(404, 'User with this email does not exist');
+  const token = await tokenService.generatePasswordToken(user.name, user.email);
+  await emailService.sendPasswordEmail(email, token);
   return res.status(httpStatus.NO_CONTENT).send();
 });
 
-const resetPassword = catchAsync(async (req: Request, res: Response) => {
-  const { token } = req.query;
-  const { password } = req.body;
-  // TO-DO: delete all refresh tokens of the user
-  if (!token || typeof token !== 'string') throw new ApiError(400, 'Invalid token');
-  await authService.resetPassword(token, password);
-  return res.status(httpStatus.NO_CONTENT).send();
-});
+const resetPassword = () => {
+  return 'delete this';
+};
 
 const authController = {
   register,
+  setPassword,
   login,
   google,
   refreshTokens,

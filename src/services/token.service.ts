@@ -60,6 +60,17 @@ const generateAuthTokens = async (userId: string) => {
   };
 };
 
+const generatePasswordToken = async (name: string, email: string) => {
+  const exp = moment().add(30, 'minutes').unix();
+  const payload = { name, email, iat: moment().unix(), exp };
+  return jwt.sign(payload, config.jwt.secret);
+};
+
+const verifyPasswordToken = async (token: string) => {
+  const user: any = jwt.verify(token, config.jwt.secret);
+  return user;
+};
+
 const generateVerifyEmailToken = async (user: User) => {
   const verifyEmailTokenExpires = moment().add(config.jwt.verifyEmailExpirationMinutes, 'minutes');
   const verifyEmailToken = generateToken(user.id, verifyEmailTokenExpires, TokenTypes.VERIFY_EMAIL);
@@ -78,7 +89,9 @@ const tokenService = {
   generateToken,
   saveToken,
   verifyToken,
+  verifyPasswordToken,
   generateAuthTokens,
+  generatePasswordToken,
   generateVerifyEmailToken,
   generateResetPasswordToken,
 };

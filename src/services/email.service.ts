@@ -16,6 +16,13 @@ const sendEmail = async (to: string, subject: string, text: string) => {
   await transport.sendMail(msg);
 };
 
+const sendPasswordEmail = async (to: string, token: string) => {
+  const subject = 'Set Password';
+  const setPasswordUrl = `${config.client_url}/set-password?token=${token}`;
+  const text = `Please set a new password for your account here: ${setPasswordUrl}`;
+  await sendEmail(to, subject, text);
+};
+
 const sendVerificationEmail = async (to: string, token: string) => {
   const subject = 'Email Verification';
   const verificationEmailUrl = `${config.email.verificationUrl}?token=${token}`;
@@ -33,6 +40,7 @@ const sendResetPasswordEmail = async (to: string, token: string) => {
 const emailService = {
   transport,
   sendEmail,
+  sendPasswordEmail,
   sendVerificationEmail,
   sendResetPasswordEmail,
 };
