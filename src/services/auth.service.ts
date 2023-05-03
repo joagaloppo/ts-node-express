@@ -5,12 +5,17 @@ import ApiError from '../utils/ApiError';
 
 const prisma = new PrismaClient();
 
-const setPassword = async (token: string, password: string) => {
-  const user = await tokenService.verifyPasswordToken(token);
-  const userExists = await userService.getUserByEmail(user.email);
-  return userExists
-    ? userService.updateUserById(userExists.id, { password })
-    : userService.createUser({ name: user.name, email: user.email, password });
+const upsertUserPassword = async (token: string, password: string) => {
+  const userToken = await tokenService.verifyPasswordToken(token);
+  const userExists = await userService.getUserByEmail(userToken.email);
+  if (userExists) {
+    if (!userExists.password) return userService.updateUserById(userExists.id, { password });
+    if (userExists.password !== userToken.password) throw new ApiError(400, 'Your password has already been set');
+    if (bcrypt.compareSync(password, userExists.password)) throw new ApiError(400, 'You cannot use your old password');
+    return userService.updateUserById(userExists.id, { password });
+  }
+
+  return userService.createUser({ name: userToken.name, email: userToken.email, password });
 };
 
 const loginWithCredentials = async (email: string, password: string) => {
@@ -47,7 +52,7 @@ const refreshAuth = async (refreshToken: string) => {
 };
 
 const authService = {
-  setPassword,
+  upsertUserPassword,
   loginWithCredentials,
   loginWithGoogle,
   logout,

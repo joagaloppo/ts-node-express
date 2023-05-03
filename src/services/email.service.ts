@@ -29,7 +29,7 @@ const sendPasswordEmail = async (to: string, token: string) => {
           Set Password
         </button>
       </a>
-      <p style="font-size:12px">If you did not request this, please ignore this email. <br /> This link will expire in 30 minutes.</p>
+      <p style="font-size:12px">If you did not request this, please ignore this email. <br /> This link will expire in ${config.jwt.passwordExp} minutes.</p>
     </div>
   </div>
   `;

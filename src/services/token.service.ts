@@ -60,15 +60,21 @@ const generateAuthTokens = async (userId: string) => {
   };
 };
 
-const generatePasswordToken = async (name: string, email: string) => {
+const generatePasswordToken = async (name: string, email: string, password: string) => {
   const exp = moment().add(config.jwt.passwordExp, 'minutes').unix();
-  const payload = { name, email, iat: moment().unix(), exp };
+  const payload = { name, email, password, iat: moment().unix(), exp };
   return jwt.sign(payload, config.jwt.secret);
 };
 
 const verifyPasswordToken = async (token: string) => {
   const user: any = jwt.verify(token, config.jwt.secret);
+  if (!user) throw new ApiError(400, 'Token is invalid');
+  if (moment().isAfter(moment.unix(user.exp))) throw new ApiError(400, 'Token has expired');
   return user;
+};
+
+const deleteUserTokens = async (userId: string) => {
+  await prisma.token.deleteMany({ where: { userId } });
 };
 
 const tokenService = {
@@ -78,6 +84,7 @@ const tokenService = {
   verifyPasswordToken,
   generateAuthTokens,
   generatePasswordToken,
+  deleteUserTokens,
 };
 
 export default tokenService;
