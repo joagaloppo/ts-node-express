@@ -1,73 +1,63 @@
 import Joi from 'joi';
 
-const emailValidation = Joi.string().required().email().max(128).lowercase().trim();
-const passwordValidation = Joi.string().required().min(6).max(128);
-const nameValidation = Joi.string().required().min(2).max(128).trim();
-const tokenValidation = Joi.string().required().max(500).trim();
+const email = Joi.string().required().email().max(128).lowercase().trim();
+const password = Joi.string().required().min(6).max(128);
+const name = Joi.string().required().min(2).max(128).trim();
+const token = Joi.string().required().max(500).trim();
 
 const register = {
   body: Joi.object().keys({
-    email: emailValidation,
-    password: passwordValidation,
-    name: nameValidation,
+    email,
+    name,
+  }),
+};
+
+const setPassword = {
+  body: Joi.object().keys({
+    token,
+    password,
   }),
 };
 
 const login = {
   body: Joi.object().keys({
-    email: emailValidation,
-    password: passwordValidation,
+    email,
+    password,
   }),
 };
 
 const google = {
   body: Joi.object().keys({
-    token: tokenValidation,
+    token,
   }),
 };
 
 const logout = {
   body: Joi.object().keys({
-    refreshToken: tokenValidation,
+    refreshToken: token,
   }),
 };
 
 const refreshTokens = {
   body: Joi.object().keys({
-    refreshToken: tokenValidation,
-  }),
-};
-
-const verifyEmail = {
-  query: Joi.object().keys({
-    token: tokenValidation,
+    refreshToken: token,
   }),
 };
 
 const forgotPassword = {
   body: Joi.object().keys({
-    email: emailValidation,
-  }),
-};
-
-const resetPassword = {
-  query: Joi.object().keys({
-    token: tokenValidation,
-  }),
-  body: Joi.object().keys({
-    password: passwordValidation,
+    email,
   }),
 };
 
 const authValidation = {
   register,
+  setPassword,
   login,
   google,
   logout,
   refreshTokens,
-  verifyEmail,
   forgotPassword,
-  resetPassword,
 };
 
 export default authValidation;
