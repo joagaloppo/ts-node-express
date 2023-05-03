@@ -41,10 +41,10 @@ const verifyToken = async (token: string, type: TokenTypes) => {
 };
 
 const generateAuthTokens = async (userId: string) => {
-  const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
+  const accessTokenExpires = moment().add(config.jwt.accessExp, 'minutes');
   const accessToken = generateToken(userId, accessTokenExpires, TokenTypes.ACCESS);
 
-  const refreshTokenExpires = moment().add(config.jwt.refreshExpirationDays, 'days');
+  const refreshTokenExpires = moment().add(config.jwt.refreshExp, 'days');
   const refreshToken = generateToken(userId, refreshTokenExpires, TokenTypes.REFRESH);
   await saveToken(refreshToken, userId, refreshTokenExpires, TokenTypes.REFRESH);
 
@@ -61,7 +61,7 @@ const generateAuthTokens = async (userId: string) => {
 };
 
 const generatePasswordToken = async (name: string, email: string) => {
-  const exp = moment().add(30, 'minutes').unix();
+  const exp = moment().add(config.jwt.passwordExp, 'minutes').unix();
   const payload = { name, email, iat: moment().unix(), exp };
   return jwt.sign(payload, config.jwt.secret);
 };
@@ -71,20 +71,6 @@ const verifyPasswordToken = async (token: string) => {
   return user;
 };
 
-const generateVerifyEmailToken = async (user: User) => {
-  const verifyEmailTokenExpires = moment().add(config.jwt.verifyEmailExpirationMinutes, 'minutes');
-  const verifyEmailToken = generateToken(user.id, verifyEmailTokenExpires, TokenTypes.VERIFY_EMAIL);
-  await saveToken(verifyEmailToken, user.id, verifyEmailTokenExpires, TokenTypes.VERIFY_EMAIL);
-  return verifyEmailToken;
-};
-
-const generateResetPasswordToken = async (user: User) => {
-  const resetPasswordTokenExpires = moment().add(config.jwt.resetPasswordExpirationMinutes, 'minutes');
-  const resetPasswordToken = generateToken(user.id, resetPasswordTokenExpires, TokenTypes.RESET_PASSWORD);
-  await saveToken(resetPasswordToken, user.id, resetPasswordTokenExpires, TokenTypes.RESET_PASSWORD);
-  return resetPasswordToken;
-};
-
 const tokenService = {
   generateToken,
   saveToken,
@@ -92,8 +78,6 @@ const tokenService = {
   verifyPasswordToken,
   generateAuthTokens,
   generatePasswordToken,
-  generateVerifyEmailToken,
-  generateResetPasswordToken,
 };
 
 export default tokenService;

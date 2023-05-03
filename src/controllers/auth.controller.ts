@@ -1,4 +1,3 @@
-import { User } from '@prisma/client';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import ApiError from '../utils/ApiError';
@@ -16,7 +15,7 @@ const register = catchAsync(async (req: Request, res: Response) => {
 
 const setPassword = catchAsync(async (req: Request, res: Response) => {
   const { token, password } = req.body;
-  const user = await authService.createOrEditUser(token, password);
+  const user = await authService.setPassword(token, password);
   // TO-DO: delete all refresh tokens of the user.
   const tokens = await tokenService.generateAuthTokens(user.id);
   return res.status(httpStatus.OK).json({ user, tokens });
@@ -36,27 +35,14 @@ const google = catchAsync(async (req: Request, res: Response) => {
   return res.status(httpStatus.OK).json({ user, tokens });
 });
 
-const refreshTokens = catchAsync(async (req: Request, res: Response) => {
-  const tokens = await authService.refreshAuth(req.body.refreshToken);
-  return res.status(httpStatus.OK).json({ ...tokens });
-});
-
 const logout = catchAsync(async (req: Request, res: Response) => {
   await authService.logout(req.body.refreshToken);
   return res.status(httpStatus.NO_CONTENT).send();
 });
 
-const sendVerificationEmail = catchAsync(async (req: Request, res: Response) => {
-  const verifyEmailToken = await tokenService.generateVerifyEmailToken(req.user as User);
-  await emailService.sendVerificationEmail((req.user as User).email, verifyEmailToken);
-  return res.status(httpStatus.NO_CONTENT).send();
-});
-
-const verifyEmail = catchAsync(async (req: Request, res: Response) => {
-  const { token } = req.query;
-  if (!token || typeof token !== 'string') throw new ApiError(400, 'Invalid token');
-  await authService.verifyEmail(token);
-  return res.status(httpStatus.NO_CONTENT).send();
+const refreshTokens = catchAsync(async (req: Request, res: Response) => {
+  const tokens = await authService.refreshAuth(req.body.refreshToken);
+  return res.status(httpStatus.OK).json({ ...tokens });
 });
 
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
@@ -68,21 +54,14 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
   return res.status(httpStatus.NO_CONTENT).send();
 });
 
-const resetPassword = () => {
-  return 'delete this';
-};
-
 const authController = {
   register,
   setPassword,
   login,
   google,
-  refreshTokens,
   logout,
-  sendVerificationEmail,
-  verifyEmail,
+  refreshTokens,
   forgotPassword,
-  resetPassword,
 };
 
 export default authController;

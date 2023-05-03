@@ -5,19 +5,12 @@ import ApiError from '../utils/ApiError';
 
 const prisma = new PrismaClient();
 
-const createOrEditUser = async (token: string, password: string) => {
+const setPassword = async (token: string, password: string) => {
   const user = await tokenService.verifyPasswordToken(token);
   const userExists = await userService.getUserByEmail(user.email);
-  const hashedPassword = await bcrypt.hash(password, 10);
-
   return userExists
-    ? prisma.user.update({
-        where: { id: userExists.id },
-        data: { password: hashedPassword },
-      })
-    : prisma.user.create({
-        data: { name: user.name, email: user.email, password: hashedPassword },
-      });
+    ? userService.updateUserById(userExists.id, { password })
+    : userService.createUser({ name: user.name, email: user.email, password });
 };
 
 const loginWithCredentials = async (email: string, password: string) => {
@@ -30,26 +23,17 @@ const loginWithGoogle = async (token: string) => {
   const google = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
     headers: { Authorization: `Bearer ${token}` },
   }).then((res) => res.json());
+  if (!google || !google.email) throw new ApiError(400, 'Google login failed');
+  const userExists = await userService.getUserByEmail(google.email);
+  if (!userExists) return userService.createUser({ googleId: google.sub, email: google.email, name: google.name });
+  if (!userExists.googleId) return userService.updateUserById(userExists.id, { googleId: google.sub });
+  return userExists;
+};
 
-  if (!google) throw new ApiError(400, 'Google login failed');
-  if (!google.email) throw new ApiError(400, 'Email not found');
-
-  const existingUser = await userService.getUserByEmail(google.email);
-
-  if (!existingUser)
-    return userService.createUser({
-      googleId: google.sub,
-      email: google.email,
-      name: google.name,
-      emailVerified: true,
-    });
-
-  if (!existingUser.googleId)
-    await prisma.user.update({ where: { id: existingUser.id }, data: { googleId: google.sub } });
-  if (!existingUser.emailVerified)
-    await prisma.user.update({ where: { id: existingUser.id }, data: { emailVerified: true } });
-
-  return existingUser;
+const logout = async (refreshToken: string) => {
+  const refreshTokenDoc = await prisma.token.findUnique({ where: { token: refreshToken } });
+  if (!refreshTokenDoc) throw new ApiError(404, 'Refresh token not found');
+  await prisma.token.delete({ where: { id: refreshTokenDoc.id } });
 };
 
 const refreshAuth = async (refreshToken: string) => {
@@ -62,43 +46,12 @@ const refreshAuth = async (refreshToken: string) => {
   return tokens;
 };
 
-const logout = async (refreshToken: string) => {
-  const refreshTokenDoc = await prisma.token.findUnique({ where: { token: refreshToken } });
-  if (!refreshTokenDoc) throw new ApiError(404, 'Refresh token not found');
-  await prisma.token.delete({ where: { id: refreshTokenDoc.id } });
-};
-
-const verifyEmail = async (token: string) => {
-  const tokenDoc = await tokenService.verifyToken(token, TokenTypes.VERIFY_EMAIL);
-  if (!tokenDoc.User) throw new ApiError(404, 'User not found');
-  const user = await userService.getUserById(tokenDoc.User.id);
-  if (!user) throw new ApiError(404, 'User not found');
-  await prisma.token.delete({ where: { id: tokenDoc.id } });
-  await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } });
-};
-
-const resetPassword = async (token: string, password: string) => {
-  const tokenDoc = await tokenService.verifyToken(token, TokenTypes.RESET_PASSWORD);
-  if (!tokenDoc.User) throw new ApiError(404, 'User not found');
-  const user = await userService.getUserById(tokenDoc.User.id);
-  if (!user) throw new ApiError(404, 'User not found');
-
-  const refreshTokens = await prisma.token.findMany({ where: { type: TokenTypes.REFRESH } });
-  await prisma.token.deleteMany({ where: { id: { in: refreshTokens.map((t) => t.id) } } });
-
-  await prisma.token.delete({ where: { id: tokenDoc.id } });
-  const hashedPassword = await bcrypt.hash(password, 10);
-  await prisma.user.update({ where: { id: user.id }, data: { password: hashedPassword } });
-};
-
 const authService = {
-  createOrEditUser,
+  setPassword,
   loginWithCredentials,
   loginWithGoogle,
-  refreshAuth,
   logout,
-  verifyEmail,
-  resetPassword,
+  refreshAuth,
 };
 
 export default authService;

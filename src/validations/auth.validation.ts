@@ -50,15 +50,6 @@ const forgotPassword = {
   }),
 };
 
-const resetPassword = {
-  query: Joi.object().keys({
-    token: tokenValidation,
-  }),
-  body: Joi.object().keys({
-    password: passwordValidation,
-  }),
-};
-
 const authValidation = {
   register,
   setPassword,
@@ -67,7 +58,6 @@ const authValidation = {
   logout,
   refreshTokens,
   forgotPassword,
-  resetPassword,
 };
 
 export default authValidation;
