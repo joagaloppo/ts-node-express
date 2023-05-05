@@ -68,7 +68,7 @@ Access the server at `http://localhost:3000`
 - nodemailer: Node.js module for sending emails.
 #### Configuration and environment:
 - dotenv: Module for loading environment variables from a .env file.
-- moment: Library for parsing, manipulating, and displaying dates and times.
+- dayjs: Library for parsing, manipulating, and displaying dates and times.
 - http-status: Utility for easy access to HTTP status codes.
 #### Logging:
 - winston: Logger library for recording logs with multiple transports.
