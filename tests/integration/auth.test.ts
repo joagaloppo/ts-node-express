@@ -1,6 +1,6 @@
 import { PrismaClient, TokenTypes } from '@prisma/client';
 import request from 'supertest';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import bcrypt from 'bcryptjs';
 import { faker } from '@faker-js/faker';
 import { insertRandomUser } from '../fixtures/user.fixture';
@@ -102,7 +102,7 @@ describe('Auth', () => {
     it('should return 204 if refresh token is valid', async () => {
       const user = await insertRandomUser();
 
-      const expires = moment().add(config.jwt.refreshExpirationDays, 'days');
+      const expires = dayjs().add(config.jwt.refreshExpirationDays, 'days');
       const refreshToken = tokenService.generateToken(user.id, expires, TokenTypes.REFRESH);
       await tokenService.saveToken(refreshToken, user.id, expires, TokenTypes.REFRESH);
 
@@ -113,7 +113,7 @@ describe('Auth', () => {
 
     it('should return 404 if refresh token is not found in the database', async () => {
       const user = await insertRandomUser();
-      const expires = moment().add(config.jwt.refreshExpirationDays, 'days');
+      const expires = dayjs().add(config.jwt.refreshExpirationDays, 'days');
       const refreshToken = tokenService.generateToken(user.id, expires, TokenTypes.REFRESH);
       await request(app).post('/auth/logout').send({ refreshToken }).expect(404);
     });

@@ -1,4 +1,4 @@
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { PrismaClient, TokenTypes } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import tokenService from '../../src/services/token.service';
@@ -14,8 +14,8 @@ const expire = {
 };
 
 const generateValidToken = async (userId: string, type: TokenTypes, expired = false, secret = config.jwt.secret) => {
-  const expires = expired ? moment().subtract(1, 'minute') : moment().add(...expire[type]);
-  const token = jwt.sign({ sub: userId, iat: moment().unix(), exp: expires.unix(), type }, secret);
+  const expires = expired ? dayjs().subtract(1, 'minute') : dayjs().add(...expire[type]);
+  const token = jwt.sign({ sub: userId, iat: dayjs().unix(), exp: expires.unix(), type }, secret);
   if (type !== TokenTypes.ACCESS)
     await Prisma.token.create({
       data: { token, type, blacklisted: false, User: { connect: { id: userId } }, expiresAt: expires.toDate() },
