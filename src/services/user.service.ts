@@ -8,7 +8,7 @@ const getUsers = async () => {
   return users;
 };
 
-const getUserById = async (id: string) => {
+const getUserById = async (id: number) => {
   const user = await prisma.user.findUnique({ where: { id } });
   return user;
 };
@@ -25,14 +25,14 @@ const createUser = async (userBody: any) => {
   return user;
 };
 
-const updateUserById = async (id: string, userBody: any) => {
+const updateUserById = async (id: number, userBody: any) => {
   const data = { ...userBody };
   if (data.password) data.password = await bcrypt.hash(userBody.password, 10);
   const user = await prisma.user.update({ where: { id }, data: { ...data } });
   return user;
 };
 
-const dropUserById = async (id: string) => {
+const dropUserById = async (id: number) => {
   const user = await prisma.user.delete({ where: { id } });
   return user;
 };

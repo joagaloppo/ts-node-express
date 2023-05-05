@@ -1,52 +1,37 @@
 import jwt from 'jsonwebtoken';
 import moment, { Moment } from 'moment';
-import { PrismaClient, TokenTypes, User } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import ApiError from '../utils/ApiError';
 import config from '../config/config';
 
 const prisma = new PrismaClient();
 
-const generateToken = (userId: string, expires: Moment, type: TokenTypes, secret = config.jwt.secret) => {
-  const payload = {
-    sub: userId,
-    iat: moment().unix(),
-    exp: expires.unix(),
-    type,
-  };
+const generateToken = (userId: number, expires: Moment, secret = config.jwt.secret) => {
+  const payload = { sub: userId, iat: moment().unix(), exp: expires.unix() };
   return jwt.sign(payload, secret);
 };
 
-const saveToken = async (token: string, userId: string, expires: Moment, type: TokenTypes, blacklisted = false) => {
+const saveToken = async (token: string, userId: number, expires: Moment) => {
   const tokenDoc = await prisma.token.create({
-    data: {
-      token,
-      type,
-      blacklisted,
-      User: { connect: { id: userId } },
-      expiresAt: expires.toDate(),
-    },
+    data: { token, User: { connect: { id: userId } }, expiresAt: expires.toDate() },
   });
   return tokenDoc;
 };
 
-const verifyToken = async (token: string, type: TokenTypes) => {
-  const payload = jwt.verify(token, config.jwt.secret);
+const verifyToken = async (token: string) => {
   const tokenDoc = await prisma.token.findUnique({ where: { token }, include: { User: true } });
   if (!tokenDoc) throw new ApiError(404, 'Token not found');
-  if (tokenDoc.type !== type) throw new ApiError(400, 'Token is invalid');
-  if (tokenDoc.blacklisted) throw new ApiError(400, 'Token is blacklisted');
   if (moment().isAfter(moment(tokenDoc.expiresAt))) throw new ApiError(400, 'Token has expired');
-  if (tokenDoc.User && tokenDoc.User.id !== payload.sub) throw new ApiError(400, 'Token is invalid');
   return tokenDoc;
 };
 
-const generateAuthTokens = async (userId: string) => {
+const generateAuthTokens = async (userId: number) => {
   const accessTokenExpires = moment().add(config.jwt.accessExp, 'minutes');
-  const accessToken = generateToken(userId, accessTokenExpires, TokenTypes.ACCESS);
+  const accessToken = generateToken(userId, accessTokenExpires);
 
   const refreshTokenExpires = moment().add(config.jwt.refreshExp, 'days');
-  const refreshToken = generateToken(userId, refreshTokenExpires, TokenTypes.REFRESH);
-  await saveToken(refreshToken, userId, refreshTokenExpires, TokenTypes.REFRESH);
+  const refreshToken = generateToken(userId, refreshTokenExpires);
+  await saveToken(refreshToken, userId, refreshTokenExpires);
 
   return {
     access: {
@@ -73,7 +58,7 @@ const verifyPasswordToken = async (token: string) => {
   return user;
 };
 
-const deleteUserTokens = async (userId: string) => {
+const deleteUserTokens = async (userId: number) => {
   await prisma.token.deleteMany({ where: { userId } });
 };
 
