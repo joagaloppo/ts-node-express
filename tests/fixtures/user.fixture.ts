@@ -1,4 +1,4 @@
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient, User, Role } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 import bcrypt from 'bcryptjs';
 
@@ -16,21 +16,21 @@ const randomUser = (): RandomUser => ({
   password: 'password',
 });
 
-const insertUser = async (user: RandomUser) => {
+const insertUser = async (user: RandomUser, role?: Role) => {
   const hashedPassword = await bcrypt.hash(user.password, 10);
   return prisma.user.create({
     data: {
       name: user.name,
       email: user.email,
       password: hashedPassword,
+      role,
     },
   });
 };
 
-const insertRandomUser = async (): Promise<User> => {
+const insertRandomUser = async (role?: Role): Promise<User> => {
   const user = randomUser();
-  const dbUser = await insertUser(user);
-  dbUser.password = user.password;
+  const dbUser = await insertUser(user, role);
   return dbUser;
 };
 

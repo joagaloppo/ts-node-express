@@ -1,26 +1,31 @@
 import dayjs from 'dayjs';
-import { PrismaClient, TokenTypes } from '@prisma/client';
 import jwt from 'jsonwebtoken';
-import tokenService from '../../src/services/token.service';
 import config from '../../src/config/config';
+import { tokenService } from '../../src/services';
 
-const Prisma = new PrismaClient();
-
-const expire = {
-  [TokenTypes.ACCESS]: [config.jwt.accessExpirationMinutes, 'minutes'],
-  [TokenTypes.REFRESH]: [config.jwt.refreshExpirationDays, 'days'],
-  [TokenTypes.RESET_PASSWORD]: [config.jwt.resetPasswordExpirationMinutes, 'minutes'],
-  [TokenTypes.VERIFY_EMAIL]: [config.jwt.verifyEmailExpirationMinutes, 'minutes'],
-};
-
-const generateValidToken = async (userId: string, type: TokenTypes, expired = false, secret = config.jwt.secret) => {
-  const expires = expired ? dayjs().subtract(1, 'minute') : dayjs().add(...expire[type]);
-  const token = jwt.sign({ sub: userId, iat: dayjs().unix(), exp: expires.unix(), type }, secret);
-  if (type !== TokenTypes.ACCESS)
-    await Prisma.token.create({
-      data: { token, type, blacklisted: false, User: { connect: { id: userId } }, expiresAt: expires.toDate() },
-    });
+const generateAccessToken = async (userId: number, expired = false, secret = config.jwt.secret) => {
+  const expires = expired ? dayjs().subtract(5, 'minutes') : dayjs().add(config.jwt.accessExp, 'minutes');
+  const token = jwt.sign({ sub: userId, iat: dayjs().unix(), exp: expires.unix() }, secret);
   return token;
 };
 
-export default generateValidToken;
+const generateRefreshToken = async (userId: number, expired = false, secret = config.jwt.secret) => {
+  const expires = expired ? dayjs().subtract(5, 'minutes') : dayjs().add(config.jwt.refreshExp, 'days');
+  const token = jwt.sign({ sub: userId, iat: dayjs().unix(), exp: expires.unix() }, secret);
+  await tokenService.saveToken(token, userId, expires);
+  return token;
+};
+
+const generatePasswordToken = async (
+  name: string,
+  email: string,
+  password: string,
+  expired = false,
+  secret = config.jwt.secret
+) => {
+  const expires = expired ? dayjs().subtract(5, 'minutes') : dayjs().add(config.jwt.passwordExp, 'minutes');
+  const payload = { name, email, password, iat: dayjs().unix(), exp: expires.unix() };
+  return jwt.sign(payload, secret);
+};
+
+export { generateAccessToken, generateRefreshToken, generatePasswordToken };
