@@ -3,16 +3,14 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-const createUser = async (userBody: any) => {
-  const newUser = { ...userBody };
-  if (newUser.password) newUser.password = await bcrypt.hash(newUser.password, 10);
-  const user = await prisma.user.create({ data: { ...newUser } });
-  return user;
-};
-
 const getUsers = async () => {
   const users = await prisma.user.findMany();
   return users;
+};
+
+const getUserById = async (id: string) => {
+  const user = await prisma.user.findUnique({ where: { id } });
+  return user;
 };
 
 const getUserByEmail = async (email: string) => {
@@ -20,8 +18,10 @@ const getUserByEmail = async (email: string) => {
   return user;
 };
 
-const getUserById = async (id: string) => {
-  const user = await prisma.user.findUnique({ where: { id } });
+const createUser = async (userBody: any) => {
+  const newUser = { ...userBody };
+  if (newUser.password) newUser.password = await bcrypt.hash(newUser.password, 10);
+  const user = await prisma.user.create({ data: { ...newUser } });
   return user;
 };
 
@@ -32,24 +32,24 @@ const updateUserById = async (id: string, userBody: any) => {
   return user;
 };
 
-const deleteUserById = async (id: string) => {
+const dropUserById = async (id: string) => {
   const user = await prisma.user.delete({ where: { id } });
   return user;
 };
 
-const deleteAllUsers = async () => {
+const dropAllUsers = async () => {
   const users = await prisma.user.deleteMany();
   return users;
 };
 
 const userService = {
-  createUser,
   getUsers,
-  getUserByEmail,
   getUserById,
+  getUserByEmail,
+  createUser,
   updateUserById,
-  deleteUserById,
-  deleteAllUsers,
+  dropUserById,
+  dropAllUsers,
 };
 
 export default userService;
