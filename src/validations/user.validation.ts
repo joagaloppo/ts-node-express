@@ -6,7 +6,7 @@ const password = Joi.string().min(6).max(128);
 
 const get = {
   params: Joi.object().keys({
-    userId: Joi.string().required(),
+    userId: Joi.number().required(),
   }),
 };
 
@@ -28,7 +28,7 @@ const edit = {
 
 const drop = {
   params: Joi.object().keys({
-    userId: Joi.string().required(),
+    userId: Joi.number().required(),
   }),
 };
 

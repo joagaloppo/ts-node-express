@@ -16,6 +16,12 @@ router
   .delete(auth(actions.users.drop), userController.dropAllUsers);
 
 router
+  .route('/me')
+  .get(auth(), (req, res) => res.json(req.user))
+  .patch(auth(), validate(userValidation.edit), userController.updateMe)
+  .delete(auth(), userController.dropMe);
+
+router
   .route('/:userId')
   .get(auth(actions.users.get), validate(userValidation.get), userController.getUser)
   .patch(auth(actions.users.edit), validate(userValidation.edit), userController.updateUser)

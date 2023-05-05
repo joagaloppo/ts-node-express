@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { PrismaClient, TokenTypes } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { userService, tokenService } from '.';
 import ApiError from '../utils/ApiError';
 
@@ -43,12 +43,10 @@ const logout = async (refreshToken: string) => {
 };
 
 const refreshAuth = async (refreshToken: string) => {
-  const tokenDoc = await tokenService.verifyToken(refreshToken, TokenTypes.REFRESH);
+  const tokenDoc = await tokenService.verifyToken(refreshToken);
   if (!tokenDoc.User) throw new ApiError(404, 'User not found');
-  const user = await userService.getUserById(tokenDoc.User.id);
-  if (!user) throw new ApiError(404, 'User not found');
   await prisma.token.delete({ where: { id: tokenDoc.id } });
-  const tokens = await tokenService.generateAuthTokens(user.id);
+  const tokens = await tokenService.generateAuthTokens(tokenDoc.User.id);
   return tokens;
 };
 
