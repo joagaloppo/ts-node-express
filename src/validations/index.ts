@@ -1,4 +1,4 @@
 import authValidation from './auth.validation';
+import userValidation from './user.validation';
 
-// eslint-disable-next-line import/prefer-default-export
-export { authValidation };
+export { authValidation, userValidation };
