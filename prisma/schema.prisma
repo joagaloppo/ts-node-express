@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 model User {
@@ -26,6 +27,8 @@ model Token {
   userId      Int?
   expiresAt   DateTime   @default(now())
   createdAt   DateTime   @default(now())
+
+  @@index([userId], name: "userId")
 }
 
 enum Role {
