@@ -129,4 +129,82 @@ describe('User', () => {
       await request(app).get('/user/me').set('Authorization', `Bearer ${accessToken}`).send().expect(401);
     });
   });
+
+  describe('PATCH /user/me', () => {
+    it('should return 200 and successfully update user if data is ok', async () => {
+      const user = await insertRandomUser();
+      const accessToken = await generateAccessToken(user.id);
+      const res = await request(app)
+        .patch('/user/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ name: faker.name.fullName() })
+        .expect(200);
+      expect(res.body.user).toMatchObject({
+        id: user.id,
+        name: expect.any(String),
+        email: user.email,
+        role: user.role,
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+      });
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(dbUser).toBeDefined();
+      expect(dbUser?.name).not.toEqual(user.name);
+      expect(dbUser?.updatedAt).not.toEqual(user.updatedAt);
+    });
+
+    it('should return 401 error if access token is missing', async () => {
+      await request(app).patch('/user/me').send().expect(401);
+    });
+
+    it('should return 401 error if access token is wrong', async () => {
+      const accessToken = await generateAccessToken((await insertRandomUser()).id);
+      await request(app).patch('/user/me').set('Authorization', `Bearer ${accessToken}wrong`).send().expect(401);
+    });
+
+    it('should return 401 error if user not longer exist', async () => {
+      const user = await insertRandomUser();
+      const accessToken = await generateAccessToken(user.id);
+      await prisma.user.delete({ where: { id: user.id } });
+      await request(app).patch('/user/me').set('Authorization', `Bearer ${accessToken}`).send().expect(401);
+    });
+
+    it('should return 400 error if name is not provided', async () => {
+      const user = await insertRandomUser();
+      const accessToken = await generateAccessToken(user.id);
+      await request(app).patch('/user/me').set('Authorization', `Bearer ${accessToken}`).send({ name: '' }).expect(400);
+    });
+
+    it('should return 400 error if email is invalid', async () => {
+      const user = await insertRandomUser();
+      const accessToken = await generateAccessToken(user.id);
+      await request(app)
+        .patch('/user/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ email: 'invalidEmail' })
+        .expect(400);
+    });
+
+    it('should return 400 error if email is already used', async () => {
+      const user = await insertRandomUser();
+      const accessToken = await generateAccessToken(user.id);
+      const randomEmail = faker.internet.email();
+      await prisma.user.create({ data: { ...randomUser(), email: randomEmail } });
+      await request(app)
+        .patch('/user/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ email: randomEmail })
+        .expect(400);
+    });
+
+    it('should return 400 error if password length is less than 6 characters', async () => {
+      const user = await insertRandomUser();
+      const accessToken = await generateAccessToken(user.id);
+      await request(app)
+        .patch('/user/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'short' })
+        .expect(400);
+    });
+  });
 });
