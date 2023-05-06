@@ -1,9 +1,7 @@
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../prisma';
 import { userService, tokenService } from '.';
 import ApiError from '../utils/ApiError';
-
-const prisma = new PrismaClient();
 
 const upsertUserPassword = async (token: string, password: string) => {
   const userToken = await tokenService.verifyPasswordToken(token);

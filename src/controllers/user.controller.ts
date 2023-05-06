@@ -5,8 +5,7 @@ import { userService } from '../services';
 import ApiError from '../utils/ApiError';
 
 const getUser = catchAsync(async (req: Request, res: Response) => {
-  const id = Number(req.params.userId);
-  const user = await userService.getUserById(id);
+  const user = await userService.getUserById(Number(req.params.userId));
   if (!user) throw new ApiError(404, 'User not found');
   res.json({ user });
 });
@@ -17,15 +16,12 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
-  const exist = await userService.getUserByEmail(req.body.email);
-  if (exist) throw new ApiError(400, 'Email already taken');
   const user = await userService.createUser(req.body);
   res.status(201).json({ user });
 });
 
 const updateMe = catchAsync(async (req: Request, res: Response) => {
-  const id = Number((req.user as User).id);
-  const user = await userService.updateUserById(id, req.body);
+  const user = await userService.updateUserById(Number((req.user as User).id), req.body);
   res.status(200).json({ user });
 });
 
@@ -39,13 +35,13 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const dropMe = catchAsync(async (req: Request, res: Response) => {
-  const id = Number((req.user as User).id);
-  await userService.dropUserById(id);
+  await userService.dropUserById(Number((req.user as User).id));
   res.status(204).json({ message: 'User dropped' });
 });
 
 const dropUser = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.userId);
+  if (!id) throw new ApiError(400, 'User id is required');
   const exist = await userService.getUserById(id);
   if (!exist) throw new ApiError(404, 'User not found');
   await userService.dropUserById(id);
