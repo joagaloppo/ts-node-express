@@ -1,46 +1,12 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import prisma from '../prisma';
 
-const prisma = new PrismaClient();
-
-const getUsers = async () => {
-  const users = await prisma.user.findMany();
-  return users;
-};
-
-const getUserById = async (id: number) => {
-  const user = await prisma.user.findUnique({ where: { id } });
-  return user;
-};
-
-const getUserByEmail = async (email: string) => {
-  const user = await prisma.user.findUnique({ where: { email } });
-  return user;
-};
-
-const createUser = async (userBody: any) => {
-  const newUser = { ...userBody };
-  if (newUser.password) newUser.password = await bcrypt.hash(newUser.password, 10);
-  const user = await prisma.user.create({ data: { ...newUser } });
-  return user;
-};
-
-const updateUserById = async (id: number, userBody: any) => {
-  const data = { ...userBody };
-  if (data.password) data.password = await bcrypt.hash(userBody.password, 10);
-  const user = await prisma.user.update({ where: { id }, data: { ...data } });
-  return user;
-};
-
-const dropUserById = async (id: number) => {
-  const user = await prisma.user.delete({ where: { id } });
-  return user;
-};
-
-const dropAllUsers = async () => {
-  const users = await prisma.user.deleteMany();
-  return users;
-};
+const getUsers = async () => prisma.user.findMany();
+const getUserById = async (id: number) => prisma.user.findUnique({ where: { id } });
+const getUserByEmail = async (email: string) => prisma.user.findUnique({ where: { email } });
+const createUser = async (body: any) => prisma.user.create({ data: body });
+const updateUserById = async (id: number, body: any) => prisma.user.update({ where: { id }, data: body });
+const dropUserById = async (id: number) => prisma.user.delete({ where: { id } });
+const dropAllUsers = async () => prisma.user.deleteMany();
 
 const userService = {
   getUsers,
