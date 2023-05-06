@@ -1,10 +1,8 @@
 import jwt from 'jsonwebtoken';
 import dayjs from 'dayjs';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../prisma';
 import ApiError from '../utils/ApiError';
 import config from '../config/config';
-
-const prisma = new PrismaClient();
 
 const generateToken = (userId: number, expires: dayjs.Dayjs, secret = config.jwt.secret) => {
   const payload = { sub: userId, iat: dayjs().unix(), exp: expires.unix() };
