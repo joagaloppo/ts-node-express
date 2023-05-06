@@ -1,12 +1,14 @@
 import { PrismaClient, TokenTypes } from '@prisma/client';
 import request from 'supertest';
+import moment from 'moment';
 import bcrypt from 'bcryptjs';
 import { faker } from '@faker-js/faker';
+import { insertRandomUser } from '../fixtures/user.fixture';
 
 import app from '../../src/app';
-import insertRandomUser from '../fixtures/user.fixture';
+import config from '../../src/config/config';
+import { emailService, tokenService } from '../../src/services';
 import generateValidToken from '../fixtures/token.fixture';
-import { emailService } from '../../src/services';
 
 const prisma = new PrismaClient();
 
@@ -22,7 +24,7 @@ describe('Auth', () => {
       };
     });
 
-    it('should return 201 and register user if data is ok', async () => {
+    it('should return 201 if data is ok', async () => {
       const res = await request(app).post('/auth/register').send(newUser).expect(201);
       expect(res.body.user).toMatchObject({
         id: expect.anything(),
@@ -67,7 +69,7 @@ describe('Auth', () => {
   });
 
   describe('POST /auth/login', () => {
-    it('should return 200 and login the user if data is ok', async () => {
+    it('should return 200 if email and password match', async () => {
       const user = await insertRandomUser();
       const login = { email: user.email, password: user.password };
       const res = await request(app).post('/auth/login').send(login).expect(200);
@@ -97,13 +99,27 @@ describe('Auth', () => {
   });
 
   describe('POST /auth/logout', () => {
-    it('should return 204 and logout the user if refresh token is valid', async () => {
+    it('should return 204 if refresh token is valid', async () => {
       const user = await insertRandomUser();
-      const token = await generateValidToken(user.id, TokenTypes.REFRESH);
 
-      await request(app).post('/auth/logout').send({ refreshToken: token }).expect(204);
-      const dbToken = await prisma.token.findUnique({ where: { token } });
+      const expires = moment().add(config.jwt.refreshExpirationDays, 'days');
+      const refreshToken = tokenService.generateToken(user.id, expires, TokenTypes.REFRESH);
+      await tokenService.saveToken(refreshToken, user.id, expires, TokenTypes.REFRESH);
+
+      await request(app).post('/auth/logout').send({ refreshToken }).expect(204);
+      const dbToken = await prisma.token.findUnique({ where: { token: refreshToken } });
       expect(dbToken).toBeNull();
+    });
+
+    it('should return 404 if refresh token is not found in the database', async () => {
+      const user = await insertRandomUser();
+      const expires = moment().add(config.jwt.refreshExpirationDays, 'days');
+      const refreshToken = tokenService.generateToken(user.id, expires, TokenTypes.REFRESH);
+      await request(app).post('/auth/logout').send({ refreshToken }).expect(404);
+    });
+
+    it('should return 404 if refresh token does not exist', async () => {
+      await request(app).post('/auth/logout').send({ refreshToken: 'invalidToken' }).expect(404);
     });
 
     it('should return 400 if refresh token is not provided', async () => {
@@ -112,16 +128,6 @@ describe('Auth', () => {
 
     it('should return 400 if refresh token is not a string', async () => {
       await request(app).post('/auth/logout').send({ refreshToken: 123 }).expect(400);
-    });
-
-    it('should return 404 if token is an access token', async () => {
-      const user = await insertRandomUser();
-      const token = await generateValidToken(user.id, TokenTypes.ACCESS);
-      await request(app).post('/auth/logout').send({ refreshToken: token }).expect(404);
-    });
-
-    it('should return 404 if refresh token does not exist', async () => {
-      await request(app).post('/auth/logout').send({ refreshToken: 'invalidToken' }).expect(404);
     });
   });
 
@@ -145,14 +151,14 @@ describe('Auth', () => {
       expect(findToken).toBeNull();
     });
 
-    it('should return 400 if refresh token is not provided', async () => {
-      await request(app).post('/auth/refresh-tokens').send().expect(400);
-    });
-
     it('should return 404 if refresh token is an access token', async () => {
       const user = await insertRandomUser();
       const token = await generateValidToken(user.id, TokenTypes.ACCESS);
       await request(app).post('/auth/refresh-tokens').send({ refreshToken: token }).expect(404);
+    });
+
+    it('should return 400 if refresh token is not provided', async () => {
+      await request(app).post('/auth/refresh-tokens').send().expect(400);
     });
 
     it('should return 500 if refresh token is not valid', async () => {
