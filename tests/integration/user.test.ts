@@ -1,14 +1,10 @@
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
-import dayjs from 'dayjs';
-import bcrypt from 'bcryptjs';
 import { faker } from '@faker-js/faker';
 import { randomUser, insertRandomUser } from '../fixtures/user.fixture';
-import { generateAccessToken, generatePasswordToken, generateRefreshToken } from '../fixtures/token.fixture';
+import { generateAccessToken } from '../fixtures/token.fixture';
 
 import app from '../../src/app';
-import config from '../../src/config/config';
-import { emailService, tokenService } from '../../src/services';
 
 const prisma = new PrismaClient();
 
@@ -42,7 +38,7 @@ describe('User', () => {
     });
   });
 
-  describe('POST /user/', () => {
+  describe('POST /user', () => {
     let accessToken: string;
     let user: { name: string; email: string; password: string };
 
@@ -205,6 +201,233 @@ describe('User', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ password: 'short' })
         .expect(400);
+    });
+  });
+
+  describe('DELETE /user/me', () => {
+    it('should return 204 and successfully delete user if data is ok', async () => {
+      const user = await insertRandomUser();
+      const accessToken = await generateAccessToken(user.id);
+      await request(app).delete('/user/me').set('Authorization', `Bearer ${accessToken}`).send().expect(204);
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(dbUser).toBeNull();
+    });
+
+    it('should return 401 error if access token is missing', async () => {
+      await request(app).delete('/user/me').send().expect(401);
+    });
+
+    it('should return 401 error if access token is wrong', async () => {
+      const accessToken = await generateAccessToken((await insertRandomUser()).id);
+      await request(app).delete('/user/me').set('Authorization', `Bearer ${accessToken}wrong`).send().expect(401);
+    });
+
+    it('should return 401 error if user not longer exist', async () => {
+      const user = await insertRandomUser();
+      const accessToken = await generateAccessToken(user.id);
+      await prisma.user.delete({ where: { id: user.id } });
+      await request(app).delete('/user/me').set('Authorization', `Bearer ${accessToken}`).send().expect(401);
+    });
+  });
+
+  describe('GET /user/:id', () => {
+    let adminToken: string;
+
+    beforeEach(async () => {
+      adminToken = await generateAccessToken((await insertRandomUser('ADMIN')).id);
+    });
+
+    it('should return 200 and successfully get user if data is ok', async () => {
+      const res = await request(app)
+        .get(`/user/${(await insertRandomUser()).id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send()
+        .expect(200);
+      expect(res.body.user).toMatchObject({
+        id: expect.any(Number),
+        name: expect.any(String),
+        email: expect.any(String),
+        role: expect.any(String),
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+      });
+    });
+
+    it('should return 401 error if access token is missing', async () => {
+      await request(app)
+        .get(`/user/${(await insertRandomUser()).id}`)
+        .send()
+        .expect(401);
+    });
+
+    it('should return 401 error if access token is wrong', async () => {
+      await request(app)
+        .get(`/user/${(await insertRandomUser()).id}`)
+        .set('Authorization', `Bearer ${adminToken}wrong`)
+        .send()
+        .expect(401);
+    });
+
+    it('should return 404 error if user not longer exist', async () => {
+      const user = await insertRandomUser();
+      await prisma.user.delete({ where: { id: user.id } });
+      await request(app).get(`/user/${user.id}`).set('Authorization', `Bearer ${adminToken}`).send().expect(404);
+    });
+
+    it('should return 403 error if user is not admin', async () => {
+      const userToken = await generateAccessToken((await insertRandomUser()).id);
+      await request(app)
+        .get(`/user/${(await insertRandomUser()).id}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send()
+        .expect(403);
+    });
+  });
+
+  describe('PATCH /user/:id', () => {
+    let adminToken: string;
+
+    beforeEach(async () => {
+      adminToken = await generateAccessToken((await insertRandomUser('ADMIN')).id);
+    });
+
+    it('should return 200 and successfully update user if data is ok', async () => {
+      const user = await insertRandomUser();
+      const res = await request(app)
+        .patch(`/user/${user.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'newName' })
+        .expect(200);
+      expect(res.body.user).toMatchObject({
+        id: expect.any(Number),
+        name: 'newName',
+        email: expect.any(String),
+        role: expect.any(String),
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+      });
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(dbUser).toBeDefined();
+      expect(dbUser?.name).not.toEqual(user.name);
+      expect(dbUser?.updatedAt).not.toEqual(user.updatedAt);
+    });
+
+    it('should return 401 error if access token is missing', async () => {
+      await request(app)
+        .patch(`/user/${(await insertRandomUser()).id}`)
+        .send()
+        .expect(401);
+    });
+
+    it('should return 401 error if access token is wrong', async () => {
+      await request(app)
+        .patch(`/user/${(await insertRandomUser()).id}`)
+        .set('Authorization', `Bearer ${adminToken}wrong`)
+        .send()
+        .expect(401);
+    });
+
+    it('should return 404 error if user not longer exist', async () => {
+      const user = await insertRandomUser();
+      await prisma.user.delete({ where: { id: user.id } });
+      await request(app).patch(`/user/${user.id}`).set('Authorization', `Bearer ${adminToken}`).send().expect(404);
+    });
+
+    it('should return 403 error if user is not admin', async () => {
+      const userToken = await generateAccessToken((await insertRandomUser()).id);
+      await request(app)
+        .patch(`/user/${(await insertRandomUser()).id}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send()
+        .expect(403);
+    });
+
+    it('should return 400 error if email is already in use', async () => {
+      const userOne = await insertRandomUser();
+      const userTwo = await insertRandomUser();
+      await request(app)
+        .patch(`/user/${userTwo.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ email: userOne.email })
+        .expect(400);
+    });
+
+    it('should return 400 error if email is invalid', async () => {
+      await request(app)
+        .patch(`/user/${(await insertRandomUser()).id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ email: 'invalidEmail' })
+        .expect(400);
+    });
+
+    it('should return 400 error if name is invalid', async () => {
+      await request(app)
+        .patch(`/user/${(await insertRandomUser()).id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: '' })
+        .expect(400);
+    });
+
+    it('should return 400 error if password is invalid', async () => {
+      await request(app)
+        .patch(`/user/${(await insertRandomUser()).id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ password: 'short' })
+        .expect(400);
+    });
+  });
+
+  describe('DELETE /user/:id', () => {
+    let adminToken: string;
+
+    beforeEach(async () => {
+      adminToken = await generateAccessToken((await insertRandomUser('ADMIN')).id);
+    });
+
+    it('should return 204 and successfully delete user if data is ok', async () => {
+      const user = await insertRandomUser();
+      await request(app).delete(`/user/${user.id}`).set('Authorization', `Bearer ${adminToken}`).send().expect(204);
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      expect(dbUser).toBeNull();
+    });
+
+    it('should return 401 error if access token is missing', async () => {
+      await request(app)
+        .delete(`/user/${(await insertRandomUser()).id}`)
+        .send()
+        .expect(401);
+    });
+
+    it('should return 401 error if access token is wrong', async () => {
+      await request(app)
+        .delete(`/user/${(await insertRandomUser()).id}`)
+        .set('Authorization', `Bearer ${adminToken}wrong`)
+        .send()
+        .expect(401);
+    });
+
+    it('should return 404 error if user not longer exist', async () => {
+      const user = await insertRandomUser();
+      await prisma.user.delete({ where: { id: user.id } });
+      await request(app).delete(`/user/${user.id}`).set('Authorization', `Bearer ${adminToken}`).send().expect(404);
+    });
+
+    it('should return 403 error if user is not admin', async () => {
+      const userToken = await generateAccessToken((await insertRandomUser()).id);
+      await request(app)
+        .delete(`/user/${(await insertRandomUser()).id}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send()
+        .expect(403);
+    });
+
+    it('should return 403 error if user is trying to delete himself', async () => {
+      const user = await insertRandomUser();
+      await request(app)
+        .delete(`/user/${user.id}`)
+        .set('Authorization', `Bearer ${await generateAccessToken(user.id)}`)
+        .send()
+        .expect(403);
     });
   });
 });

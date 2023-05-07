@@ -42,6 +42,7 @@ const dropMe = catchAsync(async (req: Request, res: Response) => {
 const dropUser = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.userId);
   if (!id) throw new ApiError(400, 'User id is required');
+  if (id === (req.user as User).id) throw new ApiError(403, 'You cannot delete yourself');
   const exist = await userService.getUserById(id);
   if (!exist) throw new ApiError(404, 'User not found');
   await userService.dropUserById(id);
