@@ -15,7 +15,7 @@ describe('User', () => {
     it('should return 200 and successfully get all users', async () => {
       const accessToken = await generateAccessToken((await insertRandomUser('ADMIN')).id);
       const res = await request(app).get('/user').set('Authorization', `Bearer ${accessToken}`).send().expect(200);
-      expect(res.body.users).toEqual(
+      expect(res.body).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             id: expect.any(Number),
@@ -49,7 +49,7 @@ describe('User', () => {
 
     it('should return 201 and successfully create new user if data is ok', async () => {
       const res = await request(app).post('/user').set('Authorization', `Bearer ${accessToken}`).send(user).expect(201);
-      expect(res.body.user).toMatchObject(
+      expect(res.body).toMatchObject(
         expect.objectContaining({
           id: expect.any(Number),
           email: user.email,
@@ -135,7 +135,7 @@ describe('User', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ name: faker.name.fullName() })
         .expect(200);
-      expect(res.body.user).toMatchObject({
+      expect(res.body).toMatchObject({
         id: user.id,
         name: expect.any(String),
         email: user.email,
@@ -243,7 +243,7 @@ describe('User', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send()
         .expect(200);
-      expect(res.body.user).toMatchObject({
+      expect(res.body).toMatchObject({
         id: expect.any(Number),
         name: expect.any(String),
         email: expect.any(String),
@@ -298,7 +298,7 @@ describe('User', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ name: 'newName' })
         .expect(200);
-      expect(res.body.user).toMatchObject({
+      expect(res.body).toMatchObject({
         id: expect.any(Number),
         name: 'newName',
         email: expect.any(String),

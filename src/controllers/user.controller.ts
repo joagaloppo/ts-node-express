@@ -1,42 +1,42 @@
+import httpStatus from 'http-status';
 import { Request, Response } from 'express';
 import { User } from '@prisma/client';
-import catchAsync from '../utils/catchAsync';
 import { userService } from '../services';
+import catchAsync from '../utils/catchAsync';
 import ApiError from '../utils/ApiError';
 
 const getUser = catchAsync(async (req: Request, res: Response) => {
   const user = await userService.getUserById(Number(req.params.userId));
   if (!user) throw new ApiError(404, 'User not found');
-  res.json({ user });
+  return res.status(httpStatus.OK).json(user);
 });
 
 const getUsers = catchAsync(async (req: Request, res: Response) => {
   const users = await userService.getUsers();
-  res.json({ users });
+  return res.status(httpStatus.OK).json(users);
 });
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
   const user = await userService.createUser(req.body);
-  res.status(201).json({ user });
+  return res.status(httpStatus.CREATED).json(user);
 });
 
 const updateMe = catchAsync(async (req: Request, res: Response) => {
   const user = await userService.updateUserById(Number((req.user as User).id), req.body);
-  res.status(200).json({ user });
+  res.status(200).json(user);
 });
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {
   const id = Number(req.params.userId);
-  if (!id) throw new ApiError(400, 'User id is required');
   const exist = await userService.getUserById(id);
   if (!exist) throw new ApiError(404, 'User not found');
   const user = await userService.updateUserById(id, req.body);
-  res.status(200).json({ user });
+  res.status(200).json(user);
 });
 
 const dropMe = catchAsync(async (req: Request, res: Response) => {
   await userService.dropUserById(Number((req.user as User).id));
-  res.status(204).json({ message: 'User dropped' });
+  return res.status(httpStatus.NO_CONTENT).send();
 });
 
 const dropUser = catchAsync(async (req: Request, res: Response) => {
@@ -46,23 +46,7 @@ const dropUser = catchAsync(async (req: Request, res: Response) => {
   const exist = await userService.getUserById(id);
   if (!exist) throw new ApiError(404, 'User not found');
   await userService.dropUserById(id);
-  res.status(204).json({ message: 'User dropped' });
+  return res.status(httpStatus.NO_CONTENT).send();
 });
 
-const dropAllUsers = catchAsync(async (req: Request, res: Response) => {
-  await userService.dropAllUsers();
-  res.json({ message: 'All users dropped' });
-});
-
-const userController = {
-  getUser,
-  getUsers,
-  createUser,
-  updateMe,
-  updateUser,
-  dropMe,
-  dropUser,
-  dropAllUsers,
-};
-
-export default userController;
+export default { getUser, getUsers, createUser, updateMe, updateUser, dropMe, dropUser };
