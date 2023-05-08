@@ -4,13 +4,13 @@ export const actions = {
   users: {
     get: 'getUsers',
     create: 'createUsers',
-    edit: 'editUsers',
+    update: 'updateUsers',
     drop: 'deleteUsers',
   },
 };
 
 const roleRights = new Map<Role, string[]>([
-  [Role.ADMIN, [actions.users.get, actions.users.create, actions.users.edit, actions.users.drop]],
+  [Role.ADMIN, [actions.users.get, actions.users.create, actions.users.update, actions.users.drop]],
   [Role.USER, []],
 ]);
 

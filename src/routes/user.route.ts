@@ -12,19 +12,18 @@ router.get('/secret', auth(), (req, res) => res.json(req.user));
 router
   .route('/')
   .get(auth(actions.users.get), userController.getUsers)
-  .post(auth(actions.users.create), validate(userValidation.create), userController.createUser)
-  .delete(auth(actions.users.drop), userController.dropAllUsers);
+  .post(auth(actions.users.create), validate(userValidation.create), userController.createUser);
 
 router
   .route('/me')
   .get(auth(), (req, res) => res.json(req.user))
-  .patch(auth(), validate(userValidation.edit), userController.updateMe)
+  .patch(auth(), validate(userValidation.updateMe), userController.updateMe)
   .delete(auth(), userController.dropMe);
 
 router
   .route('/:userId')
   .get(auth(actions.users.get), validate(userValidation.get), userController.getUser)
-  .patch(auth(actions.users.edit), validate(userValidation.edit), userController.updateUser)
+  .patch(auth(actions.users.update), validate(userValidation.update), userController.updateUser)
   .delete(auth(actions.users.drop), validate(userValidation.drop), userController.dropUser);
 
 export default router;
